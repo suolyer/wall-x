@@ -860,16 +860,16 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
         model_config_path = os.path.join(pretrained_model_path, "config.json")
         model_config = cls.config_class.from_pretrained(model_config_path)
 
-        model_config = update_model_config(train_config, model_config)
-        if not is_train:
-            model_config._attn_implementation = "sdpa"
-   
         if train_config is not None:
+            model_config = update_model_config(train_config, model_config)
             processors_dict = load_wallx_processors(train_config)
             processor = processors_dict["processor"]
         else:
-            processor = AutoProcessor.from_pretrained(model_config, use_fast=True)
-
+            processor = AutoProcessor.from_pretrained(pretrained_model_path, use_fast=True)
+        
+        if not is_train:
+            model_config._attn_implementation = "sdpa"
+   
         if action_tokenizer_path is not None:
             processor.action_processor = AutoProcessor.from_pretrained(
                 action_tokenizer_path, trust_remote_code=True
@@ -877,16 +877,16 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
 
         # Set the customized robot configuration to ensure consistency between cross-embodiment
         # representations and the Wall-X action dimensionality.
-        if not train_config:
-            cls._set_customized_config(train_config)
-            customized_dof_config = train_config["customized_robot_config"][
-                "customized_dof_config"
-            ]
-            customized_agent_pos_config = train_config["customized_robot_config"][
-                "customized_agent_pos_config"
-            ]
-            setattr(model_config, "customized_dof_config", customized_dof_config)
-            setattr(model_config, "customized_agent_pos_config", customized_agent_pos_config)
+        # if not train_config:
+        #     cls._set_customized_config(train_config)
+        #     customized_dof_config = train_config["customized_robot_config"][
+        #         "customized_dof_config"
+        #     ]
+        #     customized_agent_pos_config = train_config["customized_robot_config"][
+        #         "customized_agent_pos_config"
+        #     ]
+        #     setattr(model_config, "customized_dof_config", customized_dof_config)
+        #     setattr(model_config, "customized_agent_pos_config", customized_agent_pos_config)
 
         # Initialize model with configuration and processor
         model = cls(model_config, processor=processor, **kwargs)
@@ -899,6 +899,7 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
             os.path.join(pretrained_model_path, "*.safetensors")
         )
         state_dict = {}
+        embed_tokens_size = len(processor.tokenizer)
         for file in safetensor_files:
             sd = load_file(file, device="cpu")
             # filter normalizer statistic params
@@ -907,10 +908,14 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
                 if "action_preprocessor.normalizer" in key:
                     print(f"filter load model weight {key}")
                     del_keys.append(key)
+                if "embed_tokens.weight" in key:
+                    embed_tokens_size = sd[key].shape[0]
+            # if train_config is not None:
             for key in del_keys:
                 del sd[key]
             state_dict.update(sd)
-
+        if embed_tokens_size != len(processor.tokenizer):
+            model.resize_token_embeddings(embed_tokens_size)
         model.load_state_dict(state_dict, strict=False)
 
         return model
