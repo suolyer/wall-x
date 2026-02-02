@@ -64,38 +64,38 @@ def timer(func, msg=None):
     return wrapper
 
 
-# 检查是否为分布式环境的辅助函数
+# Helper functions to check for distributed environment
 def _is_distributed():
-    """检查当前是否为分布式训练环境"""
+    """Checks if the current environment is set up for distributed training."""
     return torch.distributed.is_available() and torch.distributed.is_initialized()
 
 
 def _get_world_size():
-    """安全地获取world size"""
+    """Safely retrieves the world size (number of processes)."""
     if _is_distributed():
         return torch.distributed.get_world_size()
     return 1
 
 
 def _get_rank():
-    """安全地获取当前rank"""
+    """Safely retrieves the rank of the current process."""
     if _is_distributed():
         return torch.distributed.get_rank()
     return 0
 
 
 def _barrier(group=None):
-    """安全地执行barrier"""
+    """Safely executes a distributed barrier to synchronize processes."""
     if _is_distributed():
         torch.distributed.barrier(group=group)
 
 
-# 动态设置all_gather函数
+# Dynamically set the all_gather function
 if torch.distributed.is_available():
     try:
         dist_all_gather_func = torch.distributed.all_gather_into_tensor
     except AttributeError:
-        # 如果没有all_gather_into_tensor，使用all_gather
+        # Fallback to standard all_gather if all_gather_into_tensor is missing
         dist_all_gather_func = torch.distributed.all_gather
 else:
     dist_all_gather_func = None
@@ -338,13 +338,13 @@ class Timers:
     def _get_elapsed_time_all_ranks(self, names, reset, barrier):
         """Returns elapsed times of timers in names.
 
-        对于单卡情况，直接返回当前rank的时间。
-        对于多卡情况，保持原有的all_gather逻辑。
+        For single-node/single-GPU cases, directly returns the time for the current rank.
+        For distributed cases, maintains the existing all_gather logic.
 
         Args:
             names (List[str]): list of timer names
             reset (bool): reset the timer after recording the elapsed time
-            barrier (bool): if set, do a global barrier before time measurments
+            barrier (bool): if set, do a global barrier before time measurements
 
         Returns:
             torch.tensor: Tensor of size [world_size, len(names)] with times in float.
@@ -357,7 +357,7 @@ class Timers:
         world_size = _get_world_size()
         rank = _get_rank()
 
-        # 创建设备tensor
+        # Create device tensor
         if torch.cuda.is_available():
             device = torch.cuda.current_device()
         else:
@@ -367,19 +367,19 @@ class Timers:
             (world_size, len(names)), dtype=torch.float, device=device
         )
 
-        # 填充当前rank的时间数据
+        # Fill timing data for the current rank
         for i, name in enumerate(names):
             if name in self._timers:
                 rank_name_to_time[rank, i] = self._timers[name].elapsed(reset=reset)
 
-        # 单卡情况下直接返回，多卡情况下进行all_gather
+        # Return directly for single-node; perform all_gather for distributed setup
         if world_size > 1 and _is_distributed() and dist_all_gather_func is not None:
             try:
                 dist_all_gather_func(
                     rank_name_to_time.view(-1), rank_name_to_time[rank, :].view(-1)
                 )
             except Exception as e:
-                # 如果all_gather失败，打印警告并继续
+                # If all_gather fails, print a warning and proceed with single rank timing
                 print(f"Warning: all_gather failed: {e}. Using single rank timing.")
 
         return rank_name_to_time
@@ -413,15 +413,15 @@ class Timers:
 
         world_size = _get_world_size()
         if world_size == 1:
-            # 单卡情况下，显示简化的输出
+            # Simplified output for single-node setup
             output_string = "time (ms):"
             for name in name_to_min_max_time:
-                _, max_time = name_to_min_max_time[name]  # 单卡时min和max相同
+                _, max_time = name_to_min_max_time[name]  # min and max are identical for a single rank
                 output_string += "\n    {}: {:.2f}".format(
                     (name + " ").ljust(48, "."), max_time
                 )
         else:
-            # 多卡情况下，保持原有输出格式
+            # Maintain original output format for multi-node setup
             if max_only:
                 output_string = "max time across ranks (ms):"
             else:

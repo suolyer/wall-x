@@ -32,7 +32,7 @@ class Normalizer(nn.Module):
         ckpt = torch.load(ckpt_path, map_location="cpu")
         
         for key, value in ckpt.items():
-            # 解析 key: "min.robot_name" -> prefix="min", name="robot_name"
+            # Parse key: "min.robot_name" -> prefix="min", name="robot_name"
             try:
                 prefix, name = key.split('.', 1)
                 if hasattr(instance, prefix):
@@ -140,7 +140,7 @@ class SinusoidalPosEmb(nn.Module):
         self.min_period = min_period
         self.max_period = max_period
 
-    def forward(self, x):  # 旧PE区间
+    def forward(self, x): 
         device = x.device
         half_dim = self.dim // 2
         emb = math.log(10000) / (half_dim - 1)
@@ -209,7 +209,7 @@ class ConditionalResidualBlock1D(nn.Module):
         self.cond_encoder = nn.Sequential(
             nn.Mish(),
             nn.Linear(cond_dim, cond_channels),
-            nn.Dropout(0.1),  # 实验一下
+            nn.Dropout(0.1),
             nn.Unflatten(-1, (-1, 1)),
         )
 

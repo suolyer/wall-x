@@ -1939,7 +1939,7 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
         action_dim,
         num_inference_timesteps: int = 10,
         padding_action: Optional[torch.Tensor] = None,
-        prefix_length: Optional[int] = None,  # 前缀长度
+        prefix_length: Optional[int] = None, 
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
@@ -2192,7 +2192,7 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
             prefix_length[~has_true] = flow_action_mask.shape[1]
             prefix_length = prefix_length[0]
 
-        # support different transformers version （ryan: 1018）
+        # support different transformers version
         if hasattr(prefix_kv_cache, "key_cache"):
             for layer_i in range(len(prefix_kv_cache.key_cache)):
                 prefix_kv_cache.key_cache[layer_i] = prefix_kv_cache.key_cache[layer_i][

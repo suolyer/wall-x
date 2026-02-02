@@ -1144,24 +1144,24 @@ class Qwen2_5_VLSdpaAttention(Qwen2_5_VLAttention):
 
         causal_mask = attention_mask
         if attention_mask is not None:  # no matter the length, we just slice it
-            # 确保attention_mask在head维度上正确匹配
+            # Ensure the attention_mask correctly matches the head dimension
             if len(attention_mask.shape) == 2:  # [batch_size, seq_len]
-                # 扩展为 [batch_size, 1, seq_len, seq_len] 的因果掩码格式
+                # Expand to [batch_size, 1, seq_len, seq_len] causal mask format
                 bsz, seq_len = attention_mask.shape
                 causal_mask = attention_mask.view(bsz, 1, 1, seq_len).expand(
                     bsz, 1, seq_len, seq_len
                 )
             elif len(attention_mask.shape) == 3:  # [batch_size, seq_len, seq_len]
-                # 添加head维度：[batch_size, 1, seq_len, seq_len]
+                # Add head dimension: [batch_size, 1, seq_len, seq_len]
                 causal_mask = attention_mask.unsqueeze(1)
             elif (
                 len(attention_mask.shape) == 4
             ):  # [batch_size, num_heads, seq_len, seq_len]
                 causal_mask = attention_mask
             else:
-                raise ValueError(f"不支持的attention_mask维度: {attention_mask.shape}")
+                raise ValueError(f"Unsupported attention_mask dim: {attention_mask.shape}")
 
-            # 将attention mask转化成布尔类型
+            # Convert the attention mask to boolean type
             causal_mask = causal_mask.to(torch.bool)
 
         # SDPA with memory-efficient backend is currently (torch==2.1.2) bugged with non-contiguous inputs with custom attn_mask,

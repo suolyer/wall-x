@@ -173,13 +173,13 @@ def num_floating_point_operations(
 
     dim_lang, dim_act = args.dim_inputs
 
-    # 每层 token 数量（batch 展开）
+    # Number of tokens per layer (flattened across batch)
     N_lang = batch_size * num_lang_tokens
     N_action = batch_size * num_action_tokens
-    N_total = N_lang + N_action  # 用于 non-MoT attention
+    N_total = N_lang + N_action  # Used for non-MoT attention
 
     # ================================================================
-    # 文本 MLP FLOPs
+    # Text MLP FLOPs
     # ================================================================
     hidden_size = args.hidden_size
     ffn_hidden_size = args.intermediate_size
@@ -238,7 +238,7 @@ def num_floating_point_operations(
         F_attn_fwd = F_q_fwd + F_kv_fwd + F_o_fwd + F_matmul_fwd
 
     else:
-        # -------- MoT：expert0 + expert1  QKV --------
+        # -------- MoT: expert0 + expert1  QKV --------
         F_lang_qkv = N_lang * dim_lang * H * (2 + 4 * num_kv / num_heads)
         F_act_qkv = N_action * dim_act * H * (2 + 4 * num_kv / num_heads)
         F_attn_fwd = F_lang_qkv + F_act_qkv + F_matmul_fwd

@@ -51,7 +51,7 @@ class JointQwen2VLAttention(nn.Module):
                 "when creating this class."
             )
         if not hasattr(config, "dim_inputs") or not config.dim_inputs:
-            raise ValueError("配置中必须包含有效的 dim_inputs")
+            raise ValueError("Configuration must contain a valid dim_inputs")
 
         self.hidden_size = config.hidden_size
         self.num_heads = config.num_attention_heads
@@ -106,7 +106,7 @@ class JointQwen2VLAttention(nn.Module):
         if config.model_type == "qwen2_5_vl":
             self.rotary_emb = Qwen2_5_VLRotaryEmbedding(config=config)
         else:
-            raise NotImplementedError(f"不支持的模型类型: {config.model_type}")
+            raise NotImplementedError(f"Unsupported model type: {config.model_type}")
 
     def repeat_kv(self, hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
         """
@@ -209,14 +209,14 @@ class JointQwen2VLAttention(nn.Module):
                     bsz, 1, seq_len, seq_len
                 )
             elif len(attention_mask.shape) == 3:  # [batch_size, seq_len, seq_len]
-                # add head dimension：[batch_size, 1, seq_len, seq_len]
+                # add head dimension: [batch_size, 1, seq_len, seq_len]
                 causal_mask = attention_mask.unsqueeze(1)
             elif (
                 len(attention_mask.shape) == 4
             ):  # [batch_size, num_heads, seq_len, seq_len]
                 causal_mask = attention_mask
             else:
-                raise ValueError(f"不支持的attention_mask维度: {attention_mask.shape}")
+                raise ValueError(f"Unsupported attention_mask dim: {attention_mask.shape}")
 
             # convert the attention mask to bool type
             causal_mask = causal_mask.to(torch.bool)
@@ -429,7 +429,7 @@ class JointQwen2VLAttention(nn.Module):
                 unsqueeze_dim
             )
         else:
-            raise NotImplementedError(f"不支持的模型类型: {self.config.model_type}")
+            raise NotImplementedError(f"Unsupported model type: {self.config.model_type}")
         return query_states, key_states
 
     def _generate_output(self, attn_output, masks):
@@ -545,7 +545,7 @@ class JointQwen2VLFlashAttention(JointQwen2VLAttention):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
 
         if token_types is None:
-            raise ValueError("token_types 不能为空")
+            raise ValueError("token_types cannot be empty")
 
         if self.config.mot_opt:
             bsz, q_len, _ = orig_shape

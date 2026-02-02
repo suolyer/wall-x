@@ -14,7 +14,7 @@ import json
 from PIL import Image
 from collections import deque
 from scipy.signal import savgol_filter
-from scipy.spatial.transform import Rotation as R  # TODO：转换成numba的函数
+from scipy.spatial.transform import Rotation as R
 from safetensors.torch import load_file
 from qwen_vl_utils.vision_process import smart_resize
 from transformers import BatchFeature, AutoProcessor
@@ -575,7 +575,7 @@ class WallxModelWrapper:
                     else:
                         mask_1d = torch.as_tensor(state_mask, device=norm_state.device)[0, 0].to(dtype=torch.bool)
 
-                    norm_state = norm_state[..., mask_1d]   # 或 norm_state[:, :, mask_1d]，结果仍是 (1, 1, K)
+                    norm_state = norm_state[..., mask_1d]
 
                 norm_state = norm_state.detach().cpu().numpy()
                 print("norm_state", norm_state, flush=True)
@@ -586,7 +586,7 @@ class WallxModelWrapper:
         elif self.args.wostate:
             propri = ""
         else:
-            propri = propri_symbol  # 填占位符
+            propri = propri_symbol 
         text_prompt = (
             f"\nPredict the next action in robot action.\nProprioception: {propri}\n"
         )
@@ -624,7 +624,7 @@ class WallxModelWrapper:
                         mask_1d = state_mask[0, 0].to(dtype=torch.bool, device=norm_state.device)
                     else:
                         mask_1d = torch.as_tensor(state_mask, device=norm_state.device)[0, 0].to(dtype=torch.bool)
-                    norm_state = norm_state[..., mask_1d]   # 或 norm_state[:, :, mask_1d]，结果仍是 (1, 1, K)
+                    norm_state = norm_state[..., mask_1d]
                 norm_state = norm_state.detach().cpu().numpy()
             discretized_state = (
                 np.digitize(norm_state, bins=np.linspace(-1, 1, 256 + 1)[:-1]) - 1
@@ -633,7 +633,7 @@ class WallxModelWrapper:
         elif self.args.wostate:
             propri = ""
         else:
-            propri = propri_symbol  # 填占位符
+            propri = propri_symbol
         text_prompt = (
             f"\nPredict the next action in robot action.\nProprioception: {propri}\n"
         )
@@ -840,7 +840,7 @@ class WallxModelWrapper:
 
         post_action_pred = np.zeros((self.args.action_horizon, self.args.action_dim))
         if self.args.delta_action:
-            assert self.args.action_dim == 14, "delta 乌龟还没有支持与测试"
+            assert self.args.action_dim == 14, "Delta robot support and testing are not yet available."
 
             state_components = extract_components(
                 state, dim_dof_config, self.args.state_rpy
@@ -952,7 +952,7 @@ class WallxModelWrapper:
 
         if self.args.dct_scale>0:
             scale = self.args.dct_scale
-            dct_coeff = dct(action_pred, axis=0, norm="ortho")  # axis=action horizon维度
+            dct_coeff = dct(action_pred, axis=0, norm="ortho")
             dct_coeff = np.around(dct_coeff * scale)
             action_pred = idct(dct_coeff / scale, axis=0, norm="ortho")
 

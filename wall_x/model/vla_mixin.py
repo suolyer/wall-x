@@ -99,7 +99,7 @@ class SparseMoeBlock(nn.Module):
         )
 
         if not hasattr(config, "dim_inputs") or not config.dim_inputs:
-            raise ValueError("配置中必须包含有效的 dim_inputs")
+            raise ValueError("Configuration must contain a valid dim_inputs")
 
         self.dim_inputs = config.dim_inputs
         self.permuted = config.mot_opt
@@ -125,7 +125,7 @@ class SparseMoeBlock(nn.Module):
         # buffer
         final_output = torch.zeros_like(permuted_inputs)
 
-        # Expert forward（contain selective recompute）
+        # Expert forward contain selective recompute
         for expert_idx, expert in enumerate(self.experts):
             start, end = start_indices[expert_idx], end_indices[expert_idx]
             if start == end:
@@ -634,7 +634,7 @@ class ActionGenerationMixin(GenerationMixin):
         if fsdp_plugin:
             fsdp_version = getattr(fsdp_plugin, "fsdp_version", None)
             if fsdp_version != 1:
-                raise RuntimeError("仅支持 FSDP v1（fsdp_version=1）。")
+                raise RuntimeError("Only FSDP v1 is supported (fsdp_version=1).")
 
             device = getattr(
                 accelerator, "device", torch.device("cuda", torch.cuda.current_device())

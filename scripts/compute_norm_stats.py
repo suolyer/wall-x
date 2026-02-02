@@ -97,10 +97,10 @@ def load_lerobot_dataset(
     base_dir: Path,
 ) -> None:
     
-    # 加载本地或远程数据集
+    # Load local or remote dataset
     dataset = LeRobotDataset(base_dir)
 
-    # 遍历所有数据
+    # Iterate through all data
     frames: Dict[str, Dict[str, List]] = defaultdict(
         lambda: defaultdict(list)
     )
@@ -108,7 +108,7 @@ def load_lerobot_dataset(
     all_features = dataset.features
     non_image_columns = [col for col in all_features if "image" not in col]
 
-    print(f"正在读取以下字段: {non_image_columns}")
+    print(f"Reading the following fields:{non_image_columns}")
     fast_dataset = dataset.hf_dataset.select_columns(non_image_columns)
 
     for i in tqdm(range(len(fast_dataset))):
