@@ -135,11 +135,6 @@ def compute_action_normalizer(
     """
     logging.info("Starting action normalizer computation...")
 
-    # Collect action data by robot_id
-    action_data_by_robot: Dict[str, Dict[str, List]] = defaultdict(
-        lambda: defaultdict(list)
-    )
-
     frames = load_lerobot_dataset(repo_id, trajectory_keys, base_dir)
 
     # Compute statistics

@@ -1,6 +1,4 @@
 import os
-
-device = "cuda"
 from scipy.fft import dct
 from scipy.fft import idct
 import yaml
@@ -22,6 +20,8 @@ try:
     from spatial_tokenizer.spatial_tokenizer_kdisk import SpatialActionTokenizer
 except ImportError:
     SpatialActionTokenizer = None
+
+device = "cuda"
 
 dof_config = {
     "follow_left_ee_cartesian_pos": 3,
@@ -429,7 +429,7 @@ class WallxModelWrapper:
                 f"<|action_token_{i}|>" for i in range(self.action_tokenizer.vocab_size)
             ]
 
-        num_added_tokens = self.processor.tokenizer.add_tokens(new_tokens)
+        # num_added_tokens = self.processor.tokenizer.add_tokens(new_tokens)
 
         # define action mapper
         if self.action_tokenizer_type:
@@ -1119,9 +1119,8 @@ class WallxModelWrapper:
         return batch
 
     def generate_ar_action(self, inputs):
-        batch = self._preprocess_ar_batch(batch=inputs)
+        # batch = self._preprocess_ar_batch(batch=inputs)
         action_pred = None
-        re_generate = False
         count = 0
         while action_pred is None:
             if count > 5:
@@ -1136,7 +1135,6 @@ class WallxModelWrapper:
                 **inputs,
             )
             action_pred = output["predict_action"]
-            re_generate = True
 
         action_pred = action_pred[0]
         return action_pred

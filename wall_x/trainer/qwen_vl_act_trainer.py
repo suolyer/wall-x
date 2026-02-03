@@ -984,7 +984,6 @@ class QwenVlAct_Trainer:
 
         Handles both full checkpoint loading and model-only loading based on configuration.
         """
-        checkpoint_path = self.config["resume"]["ckpt"]
 
         if self.config.get("resume", {}).get("load_ckpt_only", False):
             if self.config.get("FSDP2", False):
