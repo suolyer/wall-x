@@ -41,10 +41,14 @@ class KeyboardThread(threading.Thread):
                     # Handle digit input, switch to corresponding instruction index
                     index = int(user_input)
                     self.new_instruction_index = index
-                    self.logger.info(f"[Keyboard] Switched to instruction index: {index}")
+                    self.logger.info(
+                        f"[Keyboard] Switched to instruction index: {index}"
+                    )
 
                 else:
-                    self.logger.info(f"[Keyboard] Received input: {user_input}. No action taken.")
+                    self.logger.info(
+                        f"[Keyboard] Received input: {user_input}. No action taken."
+                    )
 
             except EOFError:
                 break

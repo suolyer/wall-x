@@ -110,7 +110,6 @@ def update_model_config(train_config, model_config):
     return model_config
 
 
-
 class QwenVlAct_Trainer:
     """
     Vision-Language-Action trainer for Qwen-VL models with robotic action prediction.
@@ -226,15 +225,17 @@ class QwenVlAct_Trainer:
             self.global_step = self.initial_step // self.config.get(
                 "gradient_accumulation_steps", 1
             )
-    
+
     def load_normalizer(self):
         if self.config.get("norm_stats_path", None):
-            self.print_rank0(f"loading customized action statistic dof from {self.config['norm_stats_path']}")
-            action_statistic_dof = json.load(
-                open(self.config["norm_stats_path"], "r")
+            self.print_rank0(
+                f"loading customized action statistic dof from {self.config['norm_stats_path']}"
             )
+            action_statistic_dof = json.load(open(self.config["norm_stats_path"], "r"))
         else:
-            self.print_rank0("loading default action statistic dof from default_action_statistic_dof")
+            self.print_rank0(
+                "loading default action statistic dof from default_action_statistic_dof"
+            )
             action_statistic_dof = default_action_statistic_dof
 
         self.normalizer_action = Normalizer(
@@ -242,9 +243,9 @@ class QwenVlAct_Trainer:
             self.config["dof_config"],
             min_key=self.config.get("min_key", "min"),
             delta_key=self.config.get("delta_key", "delta"),
-        ) 
+        )
 
-        print("self.normalizer_action.min: ",self.normalizer_action)
+        print("self.normalizer_action.min: ", self.normalizer_action)
         self.normalizer_propri = Normalizer(
             action_statistic_dof,
             self.config["agent_pos_config"],
@@ -635,7 +636,9 @@ class QwenVlAct_Trainer:
                 "customized_agent_pos_config"
             ]
             setattr(model_config, "customized_dof_config", customized_dof_config)
-            setattr(model_config, "customized_agent_pos_config", customized_agent_pos_config)
+            setattr(
+                model_config, "customized_agent_pos_config", customized_agent_pos_config
+            )
 
             model_config = update_model_config(self.config, model_config)
             model = Qwen2_5_VLMoEForAction(
@@ -643,7 +646,7 @@ class QwenVlAct_Trainer:
                 self.use_fast_tokenizer,
                 self.processor,
                 flow_loss_weight=flow_loss_weight,
-                use_selective_recompute = self.use_selective_recompute
+                use_selective_recompute=self.use_selective_recompute,
             )
 
             model = model.to(torch.bfloat16)
@@ -941,7 +944,6 @@ class QwenVlAct_Trainer:
                 os.path.join(ckpt_path, "normalizer_propri.pth"),
             )
 
-
         # Save current iter steps
         if step != 0:  # step==0, no need for dataset resume
             _rank = self.accelerator.process_index
@@ -1003,10 +1005,11 @@ class QwenVlAct_Trainer:
                 self.model.load_state_dict(new_state_dict, strict=False)
         else:
             # Load full checkpoint including optimizer and scheduler states
-        
-            # self.accelerator.load_state(checkpoint_path)
-            state_dict = load_file(self.config["resume"]["ckpt"] + "/model.safetensors", device="cpu")
 
+            # self.accelerator.load_state(checkpoint_path)
+            state_dict = load_file(
+                self.config["resume"]["ckpt"] + "/model.safetensors", device="cpu"
+            )
 
             filtered_state_dict = {
                 k: v
@@ -1032,8 +1035,8 @@ class QwenVlAct_Trainer:
                             self.print_rank0(
                                 f"Not match key: {name}, required shape: {size_1}, loaded shape: {size_0}, new shape: {new_state_dict[name].size()}"
                             )
-                    elif "module."+name in self.model.state_dict():
-                        name = "module."+name
+                    elif "module." + name in self.model.state_dict():
+                        name = "module." + name
                         if param.size() == self.model.state_dict()[name].size():
                             new_state_dict[name] = param
                         else:
@@ -1049,13 +1052,11 @@ class QwenVlAct_Trainer:
                                 f"Not match key: {name}, required shape: {size_1}, loaded shape: {size_0}, new shape: {new_state_dict[name].size()}"
                             )
                     else:
-                        self.print_rank0(
-                            f"Not used parameter: {name}"
-                        )
+                        self.print_rank0(f"Not used parameter: {name}")
                 err = self.model.load_state_dict(new_state_dict, strict=False)
             else:
                 err = self.model.load_state_dict(filtered_state_dict, strict=False)
-        
+
             self.print_rank0(f"err in load model: {err}", err)
 
     def _load_fsdp_state_dict_with_distribute_tensor(self):

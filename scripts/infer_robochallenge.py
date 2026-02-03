@@ -1,20 +1,15 @@
 import os
+
 device = "cuda"
 from scipy.fft import dct
 from scipy.fft import idct
-import re
 import yaml
-import time
 import torch
 import numpy as np
-import threading
 import dataclasses
 import copy
 import json
 from PIL import Image
-from collections import deque
-from scipy.signal import savgol_filter
-from scipy.spatial.transform import Rotation as R
 from safetensors.torch import load_file
 from qwen_vl_utils.vision_process import smart_resize
 from transformers import BatchFeature, AutoProcessor
@@ -22,6 +17,7 @@ from transformers import BatchFeature, AutoProcessor
 from wall_x.model.action_head import Normalizer
 from wall_x.utils.constant import action_statistic_dof as default_action_statistic_dof
 from numba import jit, prange
+
 try:
     from spatial_tokenizer.spatial_tokenizer_kdisk import SpatialActionTokenizer
 except ImportError:
@@ -169,7 +165,6 @@ def compose_state_and_delta_to_abs_rpy(delta, state):
         R_abs[i, 2, 2] = A20 * S02 + A21 * S12 + A22 * S22
 
 
-
 @jit(nopython=True, parallel=True)
 def so3_to_matrix_batch_nb(batch_so3):
     N = batch_so3.shape[0]
@@ -301,7 +296,6 @@ def so3_to_euler_zyx_batch_nb(batch_so3):
     return canonicalize_euler_zyx_batch_nb(eulers)
 
 
-
 def update_model_config(train_config, model_config):
     model_config.use_state_string_representation = train_config["data"].get(
         "use_state_string_representation", False
@@ -345,7 +339,7 @@ def extract_components(data, config, is_rpy):
 
 @dataclasses.dataclass
 class WallxInferArgs:
-    config_path: str | None = None  
+    config_path: str | None = None
     checkpoint_path: str | None = None
     action_mode: str = "diffusion"  # "ar" or "diffusion"
 
@@ -353,12 +347,10 @@ class WallxInferArgs:
     action_start_ratio: float = 0
     action_end_ratio: float = 0.6
 
-    model_action_dim: int = (
-        14  
-    )
+    model_action_dim: int = 14
     action_horizon: int = 32
 
-    action_dim: int = 14  
+    action_dim: int = 14
 
     interpolate_action: bool = False
     interpolate_multiplier: int = 1
@@ -366,7 +358,7 @@ class WallxInferArgs:
     generate_subtask: bool = False
     subtask_interval: int = 0
     with_cur: bool = False
-    state_str: bool = True ### NOTE
+    state_str: bool = True  ### NOTE
     wostate: bool = False
     delta_action: bool = False
     state_rpy: bool = True
@@ -375,6 +367,7 @@ class WallxInferArgs:
     dataset_name: str = "robochallenge_aloha"
     use_hard_prompt: bool = True
     dct_scale: float = -1
+
 
 class WallxModelWrapper:
     def __init__(self, args: WallxInferArgs):
@@ -460,7 +453,7 @@ class WallxModelWrapper:
 
             ModelClass = Qwen2_5_VLMoEForAction
             ConfigClass = Qwen2_5_VLConfig
-        
+
         model_config = ConfigClass.from_pretrained(config_path)
         model_config = update_model_config(config, model_config)
 
@@ -500,7 +493,9 @@ class WallxModelWrapper:
         msg = model.load_state_dict(state_dict, strict=False)
         print(msg)
         model.eval()
-        model.set_normalizer(copy.deepcopy(self.normalizer_action), copy.deepcopy(self.normalizer_propri))
+        model.set_normalizer(
+            copy.deepcopy(self.normalizer_action), copy.deepcopy(self.normalizer_propri)
+        )
         model.to(device)
         model.to_bfloat16_for_selected_params()
 
@@ -519,39 +514,70 @@ class WallxModelWrapper:
 
     def _register_normalizers(self):
         if self.config.get("customized_action_statistic_dof", None):
-            action_statistic_dof = json.load(open(self.config["customized_action_statistic_dof"], "r"))
+            action_statistic_dof = json.load(
+                open(self.config["customized_action_statistic_dof"], "r")
+            )
         else:
             action_statistic_dof = default_action_statistic_dof
 
-        if os.path.exists(self.args.checkpoint_path+"/normalizer_action.pth"):
-            print("Loading normalizer_action from checkpoint", self.args.checkpoint_path+"/normalizer_action.pth", flush=True)
-            self.normalizer_action = Normalizer.from_ckpt(self.args.checkpoint_path+"/normalizer_action.pth")
+        if os.path.exists(self.args.checkpoint_path + "/normalizer_action.pth"):
+            print(
+                "Loading normalizer_action from checkpoint",
+                self.args.checkpoint_path + "/normalizer_action.pth",
+                flush=True,
+            )
+            self.normalizer_action = Normalizer.from_ckpt(
+                self.args.checkpoint_path + "/normalizer_action.pth"
+            )
         else:
             self.normalizer_action = Normalizer(
-                action_statistic_dof, self.config["dof_config"],
-                min_key=self.config.get("min_key", "min"), 
-                delta_key=self.config.get("delta_key", "delta")
+                action_statistic_dof,
+                self.config["dof_config"],
+                min_key=self.config.get("min_key", "min"),
+                delta_key=self.config.get("delta_key", "delta"),
             )
 
         # print("action_statistic_dof",action_statistic_dof)
 
-        if os.path.exists(self.args.checkpoint_path+"/normalizer_propri.pth"):
-            print("Loading normalizer_propri from checkpoint", self.args.checkpoint_path+"/normalizer_propri.pth", flush=True)
-            self.normalizer_propri = Normalizer.from_ckpt(self.args.checkpoint_path+"/normalizer_propri.pth")
+        if os.path.exists(self.args.checkpoint_path + "/normalizer_propri.pth"):
+            print(
+                "Loading normalizer_propri from checkpoint",
+                self.args.checkpoint_path + "/normalizer_propri.pth",
+                flush=True,
+            )
+            self.normalizer_propri = Normalizer.from_ckpt(
+                self.args.checkpoint_path + "/normalizer_propri.pth"
+            )
         else:
             self.normalizer_propri = Normalizer(
-                action_statistic_dof, self.config["agent_pos_config"],
+                action_statistic_dof,
+                self.config["agent_pos_config"],
                 min_key=self.config.get("min_key", "min"),
-                delta_key=self.config.get("delta_key", "delta")
+                delta_key=self.config.get("delta_key", "delta"),
             )
 
         print("self.args.dataset_name", self.args.dataset_name, flush=True)
-        print("normalizer_propri min", self.normalizer_propri.min.__getattr__(self.args.dataset_name), flush=True)
-        print("normalizer_propri delta", self.normalizer_propri.delta.__getattr__(self.args.dataset_name), flush=True)
-        print("normalizer_action min", self.normalizer_action.min.__getattr__(self.args.dataset_name), flush=True)
-        print("normalizer_action delta", self.normalizer_action.delta.__getattr__(self.args.dataset_name), flush=True)
+        print(
+            "normalizer_propri min",
+            self.normalizer_propri.min.__getattr__(self.args.dataset_name),
+            flush=True,
+        )
+        print(
+            "normalizer_propri delta",
+            self.normalizer_propri.delta.__getattr__(self.args.dataset_name),
+            flush=True,
+        )
+        print(
+            "normalizer_action min",
+            self.normalizer_action.min.__getattr__(self.args.dataset_name),
+            flush=True,
+        )
+        print(
+            "normalizer_action delta",
+            self.normalizer_action.delta.__getattr__(self.args.dataset_name),
+            flush=True,
+        )
 
-    
     def get_text_ar(self, instruction, camera_names, norm_state=None, state_mask=None):
         role_start_symbol = "<|im_start|>"
         role_end_symbol = "<|im_end|>"
@@ -571,9 +597,13 @@ class WallxModelWrapper:
             if isinstance(norm_state, torch.Tensor):
                 if state_mask is not None:
                     if isinstance(state_mask, torch.Tensor):
-                        mask_1d = state_mask[0, 0].to(dtype=torch.bool, device=norm_state.device)
+                        mask_1d = state_mask[0, 0].to(
+                            dtype=torch.bool, device=norm_state.device
+                        )
                     else:
-                        mask_1d = torch.as_tensor(state_mask, device=norm_state.device)[0, 0].to(dtype=torch.bool)
+                        mask_1d = torch.as_tensor(state_mask, device=norm_state.device)[
+                            0, 0
+                        ].to(dtype=torch.bool)
 
                     norm_state = norm_state[..., mask_1d]
 
@@ -586,7 +616,7 @@ class WallxModelWrapper:
         elif self.args.wostate:
             propri = ""
         else:
-            propri = propri_symbol 
+            propri = propri_symbol
         text_prompt = (
             f"\nPredict the next action in robot action.\nProprioception: {propri}\n"
         )
@@ -596,9 +626,13 @@ class WallxModelWrapper:
 
         return text
 
-
     def get_text_flow(
-        self, instruction, camera_names, action_chunk_size, norm_state=None, state_mask=None
+        self,
+        instruction,
+        camera_names,
+        action_chunk_size,
+        norm_state=None,
+        state_mask=None,
     ):
         role_start_symbol = "<|im_start|>"
         role_end_symbol = "<|im_end|>"
@@ -610,7 +644,7 @@ class WallxModelWrapper:
         action_space = "Rel EEF" if self.args.delta_action else "Abs EEF"
         _camera = ", ".join([_CAM_NAME_MAPPING[cam_name] for cam_name in camera_names])
         prologue = f"<|im_start|>system\nYou are an embodied vision-language-action (VLA) model controlling the robot with language instructions.\n Embodiment: {self.args.dataset_name.split('_')[-1]}\n Camera Setup: {_camera},\n Frequency: 32HZ\n Action Space: {action_space}\n<|im_end|>\n"
-        
+
         user_request = f"{role_start_symbol}user\nObservation:"
         print("camera_names", camera_names, flush=True)
         for cam_name in camera_names:
@@ -621,9 +655,13 @@ class WallxModelWrapper:
             if isinstance(norm_state, torch.Tensor):
                 if state_mask is not None:
                     if isinstance(state_mask, torch.Tensor):
-                        mask_1d = state_mask[0, 0].to(dtype=torch.bool, device=norm_state.device)
+                        mask_1d = state_mask[0, 0].to(
+                            dtype=torch.bool, device=norm_state.device
+                        )
                     else:
-                        mask_1d = torch.as_tensor(state_mask, device=norm_state.device)[0, 0].to(dtype=torch.bool)
+                        mask_1d = torch.as_tensor(state_mask, device=norm_state.device)[
+                            0, 0
+                        ].to(dtype=torch.bool)
                     norm_state = norm_state[..., mask_1d]
                 norm_state = norm_state.detach().cpu().numpy()
             discretized_state = (
@@ -646,7 +684,13 @@ class WallxModelWrapper:
 
     def resize_images(self, observation):
         image_inputs = []
-        view_candidates = ["face_view", "left_wrist_view", "right_wrist_view", "side_view", "global_view"]
+        view_candidates = [
+            "face_view",
+            "left_wrist_view",
+            "right_wrist_view",
+            "side_view",
+            "global_view",
+        ]
         for key in observation.keys():
             if key not in view_candidates:
                 print("!!! key not in view_candidates", key, flush=True)
@@ -660,10 +704,10 @@ class WallxModelWrapper:
             target_size = 256
             if target_size != -1:
                 # Logic for maintaining aspect ratio constraints
-                if orig_width > orig_height:  
+                if orig_width > orig_height:
                     new_width = target_size
                     new_height = int(target_size * orig_height / orig_width)
-                else:  
+                else:
                     new_height = target_size
                     new_width = int(target_size * orig_width / orig_height)
                 img_pil = img_pil.resize((new_width, new_height))
@@ -702,21 +746,30 @@ class WallxModelWrapper:
         print("before normalizing agent_pos", agent_pos, flush=True)
 
         if self.normalizer_propri is not None:
-            
+
             agent_pos = self.normalizer_propri.normalize_data(
                 agent_pos, [self.args.dataset_name]
             )
             additional_inputs["proprioception"] = agent_pos
             additional_inputs["agent_pos_mask"] = agent_pos_mask
 
-            print(f"normalizing agent_pos: {agent_pos}, {self.args.dataset_name}", flush=True)
+            print(
+                f"normalizing agent_pos: {agent_pos}, {self.args.dataset_name}",
+                flush=True,
+            )
         print("agent_pos_mask", agent_pos_mask, flush=True)
-        print("dof_mask", dof_mask[0,0], flush=True)
+        print("dof_mask", dof_mask[0, 0], flush=True)
         if mode == "ar":
-            text = self.get_text_ar(instruction, camera_names, agent_pos, agent_pos_mask)
+            text = self.get_text_ar(
+                instruction, camera_names, agent_pos, agent_pos_mask
+            )
         elif mode == "diffusion":
             text = self.get_text_flow(
-                instruction, camera_names, self.args.action_horizon, agent_pos, agent_pos_mask
+                instruction,
+                camera_names,
+                self.args.action_horizon,
+                agent_pos,
+                agent_pos_mask,
             )
         elif mode == "subtask":
             text = self.get_text_subtask(instruction, single_view=single_image)
@@ -772,12 +825,16 @@ class WallxModelWrapper:
         model_action_dim = sum(self.dof_config.values())
 
         if valid_action_dim not in (SINGLE_ARM_DIM, 2 * SINGLE_ARM_DIM):
-            raise ValueError(f"Invalid valid_action_dim: {valid_action_dim}, expect 7 or 14")
+            raise ValueError(
+                f"Invalid valid_action_dim: {valid_action_dim}, expect 7 or 14"
+            )
 
         # 1) First, prepare a container of size (1, 1, D), where D = model_action_dim.
         agent_data = np.zeros((1, 1, model_action_dim), dtype=np.float32)
         agent_pos_mask = np.zeros((1, 1, model_action_dim), dtype=np.float32)
-        dof_mask = np.zeros((1, self.args.action_horizon, model_action_dim), dtype=np.float32)
+        dof_mask = np.zeros(
+            (1, self.args.action_horizon, model_action_dim), dtype=np.float32
+        )
 
         # 2) Determine the interval to be filled [start:end)
         if valid_action_dim == SINGLE_ARM_DIM:
@@ -790,7 +847,9 @@ class WallxModelWrapper:
                     f"(need end={end})"
                 )
 
-            follow2 = np.asarray(state["follow2_pos"], dtype=np.float32).reshape(1, 1, SINGLE_ARM_DIM)
+            follow2 = np.asarray(state["follow2_pos"], dtype=np.float32).reshape(
+                1, 1, SINGLE_ARM_DIM
+            )
             agent_data[:, :, start:end] = follow2
             agent_pos_mask[:, :, start:end] = 1
             dof_mask[:, :, start:end] = 1
@@ -802,15 +861,18 @@ class WallxModelWrapper:
                     f"model_action_dim={model_action_dim} too small for valid_action_dim=14"
                 )
 
-            follow1 = np.asarray(state["follow1_pos"], dtype=np.float32).reshape(1, 1, SINGLE_ARM_DIM)
-            follow2 = np.asarray(state["follow2_pos"], dtype=np.float32).reshape(1, 1, SINGLE_ARM_DIM)
+            follow1 = np.asarray(state["follow1_pos"], dtype=np.float32).reshape(
+                1, 1, SINGLE_ARM_DIM
+            )
+            follow2 = np.asarray(state["follow2_pos"], dtype=np.float32).reshape(
+                1, 1, SINGLE_ARM_DIM
+            )
             agent_data[:, :, :end] = np.concatenate([follow1, follow2], axis=-1)
             agent_pos_mask[:, :, :end] = 1
             dof_mask[:, :, :end] = 1
 
         observation = {
-            camera_to_view_mapping[key]: views[key][0]
-            for key in views.keys()
+            camera_to_view_mapping[key]: views[key][0] for key in views.keys()
         }
         observation["agent_pos"] = agent_data
         observation["agent_pos_mask"] = agent_pos_mask
@@ -840,7 +902,9 @@ class WallxModelWrapper:
 
         post_action_pred = np.zeros((self.args.action_horizon, self.args.action_dim))
         if self.args.delta_action:
-            assert self.args.action_dim == 14, "Delta robot support and testing are not yet available."
+            assert (
+                self.args.action_dim == 14
+            ), "Delta robot support and testing are not yet available."
 
             state_components = extract_components(
                 state, dim_dof_config, self.args.state_rpy
@@ -863,14 +927,10 @@ class WallxModelWrapper:
 
         elif not self.args.action_rpy:
             post_action_pred[:, :3] = pred_left_xyz
-            post_action_pred[:, 3:6] = so3_to_euler_zyx_batch_nb(
-                pred_left_rot
-            )
+            post_action_pred[:, 3:6] = so3_to_euler_zyx_batch_nb(pred_left_rot)
             post_action_pred[:, 6:7] = pred_left_gripper
             post_action_pred[:, 7:10] = pred_right_xyz
-            post_action_pred[:, 10:13] = so3_to_euler_zyx_batch_nb(
-                pred_right_rot
-            )
+            post_action_pred[:, 10:13] = so3_to_euler_zyx_batch_nb(pred_right_rot)
             post_action_pred[:, 13:14] = pred_right_gripper
         else:
             post_action_pred = action_pred
@@ -908,7 +968,13 @@ class WallxModelWrapper:
         return serialized_actions
 
     def predict_action_rtc(
-        self, state, views, instruction=None, valid_action_dim=7, update_subtask=False, action_predict_mode=None
+        self,
+        state,
+        views,
+        instruction=None,
+        valid_action_dim=7,
+        update_subtask=False,
+        action_predict_mode=None,
     ):
         if action_predict_mode is not None:
             self.action_predict_mode = action_predict_mode
@@ -917,7 +983,7 @@ class WallxModelWrapper:
         print("use instruction", instruction, flush=True)
         camera_names = [camera_to_view_mapping[key] for key in views.keys()]
         # camera_names = ["right_wrist_view", "global_view", "side_view"]
-        print("mode:",self.action_predict_mode,flush=True)
+        print("mode:", self.action_predict_mode, flush=True)
         inputs = self._construct_input(
             observation,
             instruction,
@@ -938,7 +1004,7 @@ class WallxModelWrapper:
         print(inputs["dataset_names"], flush=True)
         print(self.processor.tokenizer.decode(inputs["input_ids"][0]), flush=True)
         print(inputs["agent_pos_mask"][0], flush=True)
-        print(inputs["dof_mask"][0,0], flush=True)
+        print(inputs["dof_mask"][0, 0], flush=True)
         if self.action_predict_mode == "ar":
             action_pred = self.generate_ar_action(inputs)
         else:
@@ -950,7 +1016,7 @@ class WallxModelWrapper:
         if action_pred is None:
             return None
 
-        if self.args.dct_scale>0:
+        if self.args.dct_scale > 0:
             scale = self.args.dct_scale
             dct_coeff = dct(action_pred, axis=0, norm="ortho")
             dct_coeff = np.around(dct_coeff * scale)
@@ -964,7 +1030,13 @@ class WallxModelWrapper:
             print("After concat action_pred", action_pred.shape, flush=True)
             # unnorm action_pred
         # print("action_pred", action_pred[:, 3], flush=True)
-        action_pred = self.normalizer_action.unnormalize_data(torch.tensor(action_pred).unsqueeze(0), [self.args.dataset_name]).squeeze(0).numpy()
+        action_pred = (
+            self.normalizer_action.unnormalize_data(
+                torch.tensor(action_pred).unsqueeze(0), [self.args.dataset_name]
+            )
+            .squeeze(0)
+            .numpy()
+        )
         print("After unnormalize_data action_pred", action_pred.shape, flush=True)
 
         action_pred = self.model_output_process(action_pred, agent_data)
@@ -1024,7 +1096,7 @@ class WallxModelWrapper:
         if matches.any():
             split_pos = torch.nonzero(matches, as_tuple=True)[0][0].item()
             # construct output ids
-            gt_output_ids = input_ids[:, split_pos + 3 : prefix_length]  
+            gt_output_ids = input_ids[:, split_pos + 3 : prefix_length]
             # remove output part from input
             input_ids = input_ids[:, : split_pos + 3]
             moe_token_types = moe_token_types[:, : split_pos + 3]
@@ -1065,16 +1137,19 @@ class WallxModelWrapper:
             )
             action_pred = output["predict_action"]
             re_generate = True
-        
+
         action_pred = action_pred[0]
         return action_pred
+
 
 class WallxInfer:
     def __init__(self, args: WallxInferArgs):
         self.args = args
         self.model_wrapper = WallxModelWrapper(args)
 
-    def run_infer_robochallenge(self, state, views, instruction, valid_action_dim=7, action_predict_mode=None):
+    def run_infer_robochallenge(
+        self, state, views, instruction, valid_action_dim=7, action_predict_mode=None
+    ):
         action_pred = self.model_wrapper.predict_action_rtc(
             state=state,
             views=views,

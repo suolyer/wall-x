@@ -23,25 +23,27 @@ class Normalizer(nn.Module):
     def from_ckpt(cls, ckpt_path):
         instance = cls.__new__(cls)
         nn.Module.__init__(instance)
-        
+
         instance.min = nn.ParameterDict()
         instance.delta = nn.ParameterDict()
         instance.min_key = "min"
         instance.delta_key = "delta"
-        
+
         ckpt = torch.load(ckpt_path, map_location="cpu")
-        
+
         for key, value in ckpt.items():
             # Parse key: "min.robot_name" -> prefix="min", name="robot_name"
             try:
-                prefix, name = key.split('.', 1)
+                prefix, name = key.split(".", 1)
                 if hasattr(instance, prefix):
-                    getattr(instance, prefix)[name] = nn.Parameter(value, requires_grad=False)
-                    print("prefix",prefix)
-                    print("name",name)
+                    getattr(instance, prefix)[name] = nn.Parameter(
+                        value, requires_grad=False
+                    )
+                    print("prefix", prefix)
+                    print("name", name)
             except ValueError:
-                continue 
-                
+                continue
+
         return instance
 
     def __init__(
@@ -67,10 +69,14 @@ class Normalizer(nn.Module):
                         all_dof_delta.extend(
                             action_statistic_dof[robot_name][k][delta_key]
                         )
-                    else:                   
+                    else:
                         if robot_name == "x2_normal" or "libero" in robot_name:
-                            print_rank_last(f"Normalizer (Warning): min_key {min_key} or delta_key {delta_key} ")
-                            print_rank_last(f"not in action_statistic_dof[{robot_name}][{k}], use default min 0.0 and delta 1.0")
+                            print_rank_last(
+                                f"Normalizer (Warning): min_key {min_key} or delta_key {delta_key} "
+                            )
+                            print_rank_last(
+                                f"not in action_statistic_dof[{robot_name}][{k}], use default min 0.0 and delta 1.0"
+                            )
                         all_dof_min.extend([0.0] * dof_config[k])
                         all_dof_delta.extend([1.0] * dof_config[k])
                 else:
@@ -98,8 +104,10 @@ class Normalizer(nn.Module):
             }
         )
 
-        for k,v in action_statistic.items():
-            print_rank_last(f"Normalizer: {k} min {action_statistic[k][min_key]} delta {action_statistic[k][delta_key]}")
+        for k, v in action_statistic.items():
+            print_rank_last(
+                f"Normalizer: {k} min {action_statistic[k][min_key]} delta {action_statistic[k][delta_key]}"
+            )
 
     def normalize_data(self, xs, dataset_names):
         new_xs = []
@@ -140,7 +148,7 @@ class SinusoidalPosEmb(nn.Module):
         self.min_period = min_period
         self.max_period = max_period
 
-    def forward(self, x): 
+    def forward(self, x):
         device = x.device
         half_dim = self.dim // 2
         emb = math.log(10000) / (half_dim - 1)
@@ -150,7 +158,6 @@ class SinusoidalPosEmb(nn.Module):
         emb = x[:, None] * emb[None, :]
         emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
         return emb
-
 
 
 class Downsample1d(nn.Module):
@@ -534,7 +541,7 @@ class ActionProcessor(nn.Module):
         self.agent_pos_config = config.agent_pos_config
         self.action_dim = sum([v for k, v in self.dof_config.items()])
         self.propri_dim = sum([v for k, v in self.agent_pos_config.items()])
-        
+
         print_rank_last(
             f"self.dof_config: {self.dof_config}; action_dim: {self.action_dim}; self.agent_pos_config: {self.agent_pos_config}; propri_dim: {self.propri_dim}"
         )
@@ -556,13 +563,9 @@ class ActionProcessor(nn.Module):
         # noise scheduler configing
         if getattr(self.config, "use_flow_action_expert", True):
             noise_scheduler_config = config.noise_scheduler
-            self.beta_alpha = noise_scheduler_config.get(
-                "beta_alpha", 1.5
-            ) 
-            self.beta_beta = noise_scheduler_config.get(
-                "beta_beta", 1.0
-            ) 
-            self.s = noise_scheduler_config.get("s", 0.999) 
+            self.beta_alpha = noise_scheduler_config.get("beta_alpha", 1.5)
+            self.beta_beta = noise_scheduler_config.get("beta_beta", 1.0)
+            self.s = noise_scheduler_config.get("s", 0.999)
             alpha_tensor = torch.tensor(self.beta_alpha, dtype=torch.float32).to("cuda")
             beta_tensor = torch.tensor(self.beta_beta, dtype=torch.float32).to("cuda")
             self.beta_dist = Beta(alpha_tensor, beta_tensor)
@@ -624,7 +627,7 @@ class ActionProcessor(nn.Module):
             torch.Tensor: Sampled time steps, with shape [batch_size]
         """
         sample = self.beta_dist.sample([batch_size]).to(device=device, dtype=dtype)
-        time = (1 - sample) * self.s  
+        time = (1 - sample) * self.s
         return time
 
     def proprioception_proj(
@@ -682,17 +685,15 @@ class ActionProcessor(nn.Module):
             noise = torch.randn_like(action_chunk)
             time = self.sample_time(batch_size, device, dtype)
             time_expanded = time.unsqueeze(-1).unsqueeze(-1)
-            noisy_action = (
-                1 - time_expanded
-            ) * noise + time_expanded * action_chunk  
+            noisy_action = (1 - time_expanded) * noise + time_expanded * action_chunk
             flow = action_chunk - noise
 
             # 2. sinusoidal positional encoding for timesteps
             time_embed = self.time_embed(time).to(torch.float32)
 
             self.noise = noise
-            self.noisy_action = noisy_action # for new x-pred
-            
+            self.noisy_action = noisy_action  # for new x-pred
+
             # 3.action_chunk_nosiy + t_pos_emb -> MLP_act_chunk -> action_chunk_nosiy_emb_with_t (dim=trans * chunk)
             if dof_mask is not None:
                 noisy_action = torch.cat([noisy_action, dof_mask], dim=-1)
@@ -700,7 +701,7 @@ class ActionProcessor(nn.Module):
             noisy_action = noisy_action.to(dtype=self.w1.weight.dtype)
             action_embed = self.w1(noisy_action)
 
-            self.time_expanded = time_expanded # for new x-pred
+            self.time_expanded = time_expanded  # for new x-pred
 
             if not self.config.use_adarms:
                 time_embed = (
@@ -742,7 +743,7 @@ class ActionProcessor(nn.Module):
         with torch.autocast("cuda", dtype=torch.float32):
             if dof_mask is not None and self.config.proj_with_mask:
                 if dof_mask.shape[1] == 1:
-                    dof_mask = dof_mask.unsqueeze(1).repeat(1,noisy_action.shape[1],1)
+                    dof_mask = dof_mask.unsqueeze(1).repeat(1, noisy_action.shape[1], 1)
                 noisy_action = torch.cat([noisy_action, dof_mask], dim=-1)
 
             noisy_action = noisy_action.to(dtype=self.w1.weight.dtype)
@@ -779,7 +780,14 @@ class ActionProcessor(nn.Module):
 
         return embed, adarms_cond
 
-    def flow_loss(self, action_hidden_states, flow, action_chunk, dof_mask=None, flow_loss_mask=None):
+    def flow_loss(
+        self,
+        action_hidden_states,
+        flow,
+        action_chunk,
+        dof_mask=None,
+        flow_loss_mask=None,
+    ):
         with torch.autocast("cuda", dtype=torch.float32):
             action_pred = self.action_proj_back(
                 action_hidden_states[:, : self.action_hidden_size]

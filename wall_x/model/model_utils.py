@@ -3,9 +3,8 @@ import os
 import numpy as np
 from transformers import AutoProcessor
 from wall_x.model.action_head import Normalizer
-from wall_x.data.load_lerobot_dataset import load_test_dataset, get_data_configs
-from wall_x.utils.constant import action_statistic_dof as default_action_statistic_dof
-import json
+
+
 def update_model_config(train_config, model_config):
     model_config.use_state_string_representation = train_config["data"].get(
         "use_state_string_representation", False
@@ -23,6 +22,7 @@ def update_model_config(train_config, model_config):
         model_config._attn_implementation = train_config["_attn_implementation"]
 
     return model_config
+
 
 def load_wallx_processors(config):
     processor = AutoProcessor.from_pretrained(config["processor_path"], use_fast=True)
@@ -76,29 +76,40 @@ def register_normalizers(config, model_path):
 
     action_statistic_dof = None
 
-    if os.path.exists(model_path+"/normalizer_action.pth"):
-        print("Loading normalizer_action from checkpoint", model_path+"/normalizer_action.pth", flush=True)
-        normalizer_action = Normalizer.from_ckpt(model_path+"/normalizer_action.pth")
+    if os.path.exists(model_path + "/normalizer_action.pth"):
+        print(
+            "Loading normalizer_action from checkpoint",
+            model_path + "/normalizer_action.pth",
+            flush=True,
+        )
+        normalizer_action = Normalizer.from_ckpt(model_path + "/normalizer_action.pth")
     else:
         normalizer_action = Normalizer(
-            action_statistic_dof, config["dof_config"],
-            min_key=config.get("min_key", "min"), 
-            delta_key=config.get("delta_key", "delta")
+            action_statistic_dof,
+            config["dof_config"],
+            min_key=config.get("min_key", "min"),
+            delta_key=config.get("delta_key", "delta"),
         )
 
     # print("action_statistic_dof",action_statistic_dof)
 
-    if os.path.exists(model_path+"/normalizer_propri.pth"):
-        print("Loading normalizer_propri from checkpoint", model_path+"/normalizer_propri.pth", flush=True)
-        normalizer_propri = Normalizer.from_ckpt(model_path+"/normalizer_propri.pth")
+    if os.path.exists(model_path + "/normalizer_propri.pth"):
+        print(
+            "Loading normalizer_propri from checkpoint",
+            model_path + "/normalizer_propri.pth",
+            flush=True,
+        )
+        normalizer_propri = Normalizer.from_ckpt(model_path + "/normalizer_propri.pth")
     else:
         normalizer_propri = Normalizer(
-            action_statistic_dof, config["agent_pos_config"],
+            action_statistic_dof,
+            config["agent_pos_config"],
             min_key=config.get("min_key", "min"),
-            delta_key=config.get("delta_key", "delta")
+            delta_key=config.get("delta_key", "delta"),
         )
 
     return normalizer_action, normalizer_propri
+
 
 def find_first_last_ones(tensor):
     """
@@ -159,7 +170,7 @@ def num_floating_point_operations(
     vision_seq_length: int = 756,
 ):
     """
-    Accurately estimate the training FLOPs of Transformer + MoE + MoT + Vision. 
+    Accurately estimate the training FLOPs of Transformer + MoE + MoT + Vision.
 
     Supported:
       - expert0 = language tokens

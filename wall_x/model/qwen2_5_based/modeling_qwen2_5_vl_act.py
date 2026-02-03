@@ -12,7 +12,6 @@ from peft import LoraConfig, get_peft_model
 from typing import Optional, List, Tuple, Any, Dict, Union
 import time
 from transformers import AutoConfig, AutoProcessor
-from transformers.activations import ACT2FN
 from transformers.utils import logging, is_torchdynamo_compiling
 from transformers.cache_utils import (
     Cache,
@@ -51,7 +50,6 @@ from wall_x.model.vla_mixin import (
 )
 from wall_x.model.joint_attention import JOINT_QWEN_ATTENTION_CLASSES
 
-from wall_x.data.config import ACTION_DATASET_NAMES, MULTIMODAL_DATASET_NAMES
 from wall_x.data.utils import update_action_statistics
 from wall_x.utils.constant import action_statistic_dof
 from pprint import pprint
@@ -73,12 +71,12 @@ class Qwen2_5_VLACausalLMOutputWithPast(ModelOutput):
     channel_loss_dict: Optional[dict[torch.FloatTensor]] = None
     channel_loss_count_dict: Optional[dict[torch.FloatTensor]] = None
 
+
 QWEN2_5_VL_ATTENTION_CLASSES = {
     "eager": Qwen2_5_VLAttention,
     "flash_attention_2": Qwen2_5_VLFlashAttention2,
     "sdpa": Qwen2_5_VLSdpaAttention,
 }
-
 
 
 class Qwen2_5_VLDecoderLayer_with_MoE(nn.Module, ActionModelMixMin):
@@ -365,7 +363,7 @@ class Qwen2_5_VLMoEModel(Qwen2_5_VLPreTrainedModel, ActionModelMixMin):
         moe_token_types: Optional[torch.LongTensor] = None,
         start_indices: Optional[torch.Tensor] = None,
         end_indices: Optional[torch.Tensor] = None,
-        positional_masks: Optional[dict] = None, 
+        positional_masks: Optional[dict] = None,
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
@@ -397,7 +395,9 @@ class Qwen2_5_VLMoEModel(Qwen2_5_VLPreTrainedModel, ActionModelMixMin):
         if moe_token_types is None:
             raise ValueError("moe_token_types must be provided for MoE routing.")
         if start_indices is None or end_indices is None:
-            raise ValueError("start_indices and end_indices must be provided for MoE routing")
+            raise ValueError(
+                "start_indices and end_indices must be provided for MoE routing"
+            )
 
         if self.gradient_checkpointing and self.training:
             if use_cache:
@@ -460,7 +460,9 @@ class Qwen2_5_VLMoEModel(Qwen2_5_VLPreTrainedModel, ActionModelMixMin):
         orig_shape = hidden_states.shape
         if self.config.mot_opt:
             hidden_states = hidden_states.view(-1, hidden_states.size(-1))
-            hidden_states, row_id_map = ops.permute(hidden_states, moe_token_types.view(-1))
+            hidden_states, row_id_map = ops.permute(
+                hidden_states, moe_token_types.view(-1)
+            )
         else:
             row_id_map = None
         probs = torch.ones_like(moe_token_types.view(-1), dtype=torch.float32).view(
@@ -483,7 +485,6 @@ class Qwen2_5_VLMoEModel(Qwen2_5_VLPreTrainedModel, ActionModelMixMin):
                     moe_token_types=moe_token_types,
                     positional_masks=positional_masks,
                 )
-
 
         for decoder_layer in self.layers:
             if output_hidden_states:
@@ -670,7 +671,7 @@ class Qwen2_5_VLMoEModel(Qwen2_5_VLPreTrainedModel, ActionModelMixMin):
             type1_mask = type1_mask.masked_fill(type1_region, 1.0).to(torch.bool)
             # Set the original causal_mask to zero in the type1 region, and then add the type1_mask.
             causal_mask = torch.where(
-                type1_mask, 
+                type1_mask,
                 torch.zeros_like(causal_mask),
                 causal_mask,
             )
@@ -769,7 +770,9 @@ class Qwen2_5_VLMoEModel(Qwen2_5_VLPreTrainedModel, ActionModelMixMin):
         return causal_mask
 
 
-class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGenerationMixin, ActionModelMixMin):
+class Qwen2_5_VLMoEForAction(
+    Qwen2_5_VLForConditionalGeneration, ActionGenerationMixin, ActionModelMixMin
+):
     """
     Qwen2.5 Vision-Language Mixture of Experts model for action processing.
 
@@ -856,7 +859,7 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
             except Exception as e:
                 print(f"load train_config.yml fail: {e}")
                 train_config = None
-        
+
         model_config_path = os.path.join(pretrained_model_path, "config.json")
         model_config = cls.config_class.from_pretrained(model_config_path)
 
@@ -865,11 +868,13 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
             processors_dict = load_wallx_processors(train_config)
             processor = processors_dict["processor"]
         else:
-            processor = AutoProcessor.from_pretrained(pretrained_model_path, use_fast=True)
-        
+            processor = AutoProcessor.from_pretrained(
+                pretrained_model_path, use_fast=True
+            )
+
         if not is_train:
             model_config._attn_implementation = "sdpa"
-   
+
         if action_tokenizer_path is not None:
             processor.action_processor = AutoProcessor.from_pretrained(
                 action_tokenizer_path, trust_remote_code=True
@@ -947,7 +952,9 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
         self.visual = Qwen2_5_VisionTransformerPretrainedModel._from_config(
             config.vision_config
         )
-        self.model = Qwen2_5_VLMoEModel(config, use_selective_recompute=use_selective_recompute)
+        self.model = Qwen2_5_VLMoEModel(
+            config, use_selective_recompute=use_selective_recompute
+        )
         self.vocab_size = config.vocab_size
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
@@ -1055,6 +1062,7 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
     def get_decoder(self):
         """Get the decoder model."""
         return self.model
+
     def get_rope_index(
         self,
         input_ids: Optional[torch.LongTensor] = None,
@@ -1275,7 +1283,7 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
                 )
 
             return position_ids, mrope_position_deltas
-    
+
     def train_step_forward(
         self,
         input_ids: torch.LongTensor = None,
@@ -1875,14 +1883,16 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
 
                 # Prepare timestep for batch processing
                 timestep = timestep.unsqueeze(0).repeat(noisy_action.shape[0])
-                action_embed,_ = self.action_preprocessor.step(
+                action_embed, _ = self.action_preprocessor.step(
                     timestep=timestep, noisy_action=noisy_action, dof_mask=dof_mask
                 )
                 action_embed = action_embed.reshape(-1, inputs_embeds.shape[-1])
 
                 # Create temporary copy of embeddings for thread safety
                 temp_inputs_embeds = inputs_embeds.clone()
-                temp_inputs_embeds[action_mask] = action_embed.to(temp_inputs_embeds.dtype)
+                temp_inputs_embeds[action_mask] = action_embed.to(
+                    temp_inputs_embeds.dtype
+                )
 
                 # Forward pass through transformer
                 transformer_outputs = self.model(
@@ -1904,7 +1914,11 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
                 hidden_states = transformer_outputs.last_hidden_state
                 action_mask = input_ids == self.action_token_id_set["action_token_id"]
                 action_hidden_states = hidden_states[action_mask]
-                pred = self.action_preprocessor.action_proj_back(action_hidden_states[:, : self.action_preprocessor.action_hidden_size])
+                pred = self.action_preprocessor.action_proj_back(
+                    action_hidden_states[
+                        :, : self.action_preprocessor.action_hidden_size
+                    ]
+                )
                 return pred.reshape(batch_size, pred_horizon, action_dim)
 
             # Perform ODE integration for diffusion sampling
@@ -1915,7 +1929,12 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
                 device=inputs_embeds.device,
                 dtype=inputs_embeds.dtype,
             )
-            action_trajectory = odeint(step, noisy_action.to(torch.float32), times.to(torch.float32), method="euler")
+            action_trajectory = odeint(
+                step,
+                noisy_action.to(torch.float32),
+                times.to(torch.float32),
+                method="euler",
+            )
 
             # Extract final predicted action and unnormalize
             predict_action = action_trajectory[-1]
@@ -1944,7 +1963,7 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
         action_dim,
         num_inference_timesteps: int = 10,
         padding_action: Optional[torch.Tensor] = None,
-        prefix_length: Optional[int] = None, 
+        prefix_length: Optional[int] = None,
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
@@ -2144,7 +2163,6 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
         )
         flow_action_mask = input_ids == self.action_token_id_set["action_token_id"]
 
-
         inputs_embeds[flow_action_mask] = action_embed
 
         timing_results["action_initialization"] = time.time() - action_init_start_time
@@ -2173,7 +2191,7 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
         action_pred = self.action_preprocessor.action_proj_back(
             action_hidden_states[:, : self.action_preprocessor.action_hidden_size]
         )
-        if getattr(self.config, "use_x_pred", False): 
+        if getattr(self.config, "use_x_pred", False):
             v_0 = action_pred - noise.reshape(-1, noise.shape[-1])
         else:
             v_0 = action_pred
@@ -2312,7 +2330,6 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
                 v_t = action_pred
             return v_t.reshape(batch_size, action_horizon, action_dim)
 
-
         action_trajectory = odeint(
             step_with_kvcache, noisy_action, times[1:], method="euler"
         )
@@ -2322,8 +2339,10 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration, ActionGeneratio
         postprocess_start_time = time.time()
         predict_action = action_trajectory[-1]
         if unnorm:
-            predict_action = self.action_preprocessor.normalizer_action.unnormalize_data(
-                predict_action, dataset_names
+            predict_action = (
+                self.action_preprocessor.normalizer_action.unnormalize_data(
+                    predict_action, dataset_names
+                )
             )
         output["predict_action"] = predict_action
         # normalize action chunk to get gt_action

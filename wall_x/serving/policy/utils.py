@@ -139,13 +139,13 @@ def prepare_batch(
         if state.shape[-1] > agent_pos_dim:
             agent_pos_mask[:, :, agent_pos_dim:] = 0
 
-        normalizer_propri.normalize_data(state, [obs["dataset_names"]]*state.shape[0])
-        
+        normalizer_propri.normalize_data(state, [obs["dataset_names"]] * state.shape[0])
+
         inputs["proprioception"] = state
         inputs["agent_pos_mask"] = agent_pos_mask
 
     # Add dataset name (required by model)
-    inputs["dataset_names"] = [obs["dataset_names"]]*state.shape[0]
+    inputs["dataset_names"] = [obs["dataset_names"]] * state.shape[0]
 
     # Move all tensors to device
     for key in inputs:
@@ -174,7 +174,7 @@ def process_images(
     """
     resized_images = []
     for img_pil in images:
-        
+
         orig_width, orig_height = img_pil.size
         target_size = 256
         if target_size != -1:
@@ -201,6 +201,7 @@ def process_images(
         resized_images.append(resized_img)
 
     return resized_images
+
 
 def format_text_with_vision_tokens(
     instruction: str,
@@ -254,7 +255,9 @@ def format_text_with_vision_tokens(
         f"\nPredict the next action in robot action.\nProprioception: {propri_symbol}\n"
     )
     user_message = f"{user_request} {instruction}{text_prompt}{role_end_symbol}\n"
-    assistant_output = f"{role_start_symbol}assistant\n{action_fast_symbol}{role_end_symbol}\n"
+    assistant_output = (
+        f"{role_start_symbol}assistant\n{action_fast_symbol}{role_end_symbol}\n"
+    )
     if predict_mode == "diffusion":
         assistant_output = f"{role_start_symbol}assistant\n{action_symbol * pred_horizon}{role_end_symbol}\n"
     complete_text = prologue + user_message + assistant_output

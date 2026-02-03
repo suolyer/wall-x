@@ -108,21 +108,25 @@ class LiberoRobotEnv(BaseEnv):
             try:
                 with open(self.initial_states_path, "r") as f:
                     self.all_initial_states = json.load(f)
-                self.logger.info(f"Loaded custom initial states from {self.initial_states_path}")
+                self.logger.info(
+                    f"Loaded custom initial states from {self.initial_states_path}"
+                )
             except Exception as e:
                 self.logger.error(f"Failed to load initial states file: {e}")
                 raise
 
     def _register_model(self) -> WallXPolicy:
 
-        return WallXPolicy(model_path = self.config.model_path,
-                            train_config = self.config.train_config,
-                            action_tokenizer_path = self.config.action_tokenizer_path,
-                            action_dim = self.config.action_dim,
-                            agent_pos_dim= self.config.action_dim,
-                            pred_horizon= self.config.pred_horizon,
-                            camera_key= self.config.cam_names,
-                            predict_mode=self.config.predict_mode)
+        return WallXPolicy(
+            model_path=self.config.model_path,
+            train_config=self.config.train_config,
+            action_tokenizer_path=self.config.action_tokenizer_path,
+            action_dim=self.config.action_dim,
+            agent_pos_dim=self.config.action_dim,
+            pred_horizon=self.config.pred_horizon,
+            camera_key=self.config.cam_names,
+            predict_mode=self.config.predict_mode,
+        )
 
     def get_instruction(self, task_desc: str) -> str:
         return task_desc
@@ -446,16 +450,27 @@ class LiberoRobotEnv(BaseEnv):
                 model_input["prompt"] = instruction
                 model_input["dataset_names"] = "libero_all"
 
-                state = np.concatenate([
-                    model_input['robot_state_action_data'].data["state_right_ee_cartesian_pos"],
-                    model_input['robot_state_action_data'].data["state_right_ee_rotation"],
-                    model_input['robot_state_action_data'].data["state_right_gripper"]
-                ],axis=-1)
+                state = np.concatenate(
+                    [
+                        model_input["robot_state_action_data"].data[
+                            "state_right_ee_cartesian_pos"
+                        ],
+                        model_input["robot_state_action_data"].data[
+                            "state_right_ee_rotation"
+                        ],
+                        model_input["robot_state_action_data"].data[
+                            "state_right_gripper"
+                        ],
+                    ],
+                    axis=-1,
+                )
 
                 model_input["state"] = state
                 model_output = self.model.infer(model_input)
 
-                model_output["robot_state_action_data"] = model_input["robot_state_action_data"]
+                model_output["robot_state_action_data"] = model_input[
+                    "robot_state_action_data"
+                ]
                 model_output["robot_state_action_data"].save_action_data(
                     model_output["predict_action"]
                 )

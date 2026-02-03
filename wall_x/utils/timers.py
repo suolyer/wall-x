@@ -416,7 +416,9 @@ class Timers:
             # Simplified output for single-node setup
             output_string = "time (ms):"
             for name in name_to_min_max_time:
-                _, max_time = name_to_min_max_time[name]  # min and max are identical for a single rank
+                _, max_time = name_to_min_max_time[
+                    name
+                ]  # min and max are identical for a single rank
                 output_string += "\n    {}: {:.2f}".format(
                     (name + " ").ljust(48, "."), max_time
                 )

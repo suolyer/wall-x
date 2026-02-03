@@ -1,6 +1,7 @@
 import yaml
 import os
 from wall_x.model.model_utils import update_model_config
+
 # from x2robot_dataset.configs.config import X2RDataConfig
 
 import json
@@ -31,7 +32,9 @@ class X2RDataConfig:
     batch_size: int = 32
     train_test_split: float = 0.9
     seed: int = 42
-    episode_chunk_size: int = 500  # Commonly used on VG side (number of frames for episode chunking)
+    episode_chunk_size: int = (
+        500  # Commonly used on VG side (number of frames for episode chunking)
+    )
 
     # ----------------------------------------------------------------------
     # 2) Visual input and sampling (image/camera)
@@ -91,11 +94,15 @@ class X2RDataConfig:
 
     # Dimension configuration
     dof_config: Dict[str, int] = field(default_factory=dict)  # Input degrees of freedom
-    agent_pos_config: Dict[str, int] = field(default_factory=dict)  # Output degrees of freedom
+    agent_pos_config: Dict[str, int] = field(
+        default_factory=dict
+    )  # Output degrees of freedom
 
     # State augmentation
     state_augmentation_ratio: float = 1.0  # Ratio of augmented states
-    state_augmentation_prob: float = 0.1  # Random dimension masking probability for state string
+    state_augmentation_prob: float = (
+        0.1  # Random dimension masking probability for state string
+    )
     state_drop_prob: float = 0.0  # Probability of dropping entire state
 
     # ----------------------------------------------------------------------
@@ -108,7 +115,9 @@ class X2RDataConfig:
     multimodal_chunk_size: int = 500
     generate_subtask_ratio: float = 0.0
     cot_ratio: float = 0.0
-    multimodal_data_ratio: float = 0.25  # Multimodal data ratio per batch in VLA dataset
+    multimodal_data_ratio: float = (
+        0.25  # Multimodal data ratio per batch in VLA dataset
+    )
     instruction_key_prob: Optional[Dict[str, float]] = None
     trunc_action_with_instruction: bool = True
     use_embodied_system_prompt_ratio: float = 0.0
@@ -123,10 +132,14 @@ class X2RDataConfig:
     put_ar_predict_in_postfix: bool = (
         False  # Whether to put ar prediction in postfix, set to True in prediction mode, False in training
     )
-    pad_to_128_multiple: bool = False  # Triton Attention requirement (deprecated, always set to False)
+    pad_to_128_multiple: bool = (
+        False  # Triton Attention requirement (deprecated, always set to False)
+    )
     max_seqlen: int = 768
     model_type: Optional[str] = None  # qwen2_5, qwen2
-    model_config_path: Optional[str] = None  # Model config path (used to derive PaddingSide)
+    model_config_path: Optional[str] = (
+        None  # Model config path (used to derive PaddingSide)
+    )
     low_dim_obs_horizon: int = 1  # To be deprecated
 
     # ----------------------------------------------------------------------
@@ -406,10 +419,9 @@ class InferConfig:
             self.normalizer_propri_path = os.path.join(
                 checkpoint_path, "normalizer_propri.pth"
             )
-        
-        self.model_path=checkpoint_path
-        self.action_tokenizer_path="/x2robot_v2/Models/fast/"
 
+        self.model_path = checkpoint_path
+        self.action_tokenizer_path = "/x2robot_v2/Models/fast/"
 
         # Other configuration attributes
         self.robot_host = robot_host
@@ -428,7 +440,7 @@ class InferConfig:
             action_horizon  # Default controlled by train config's flow action horizon
         )
         self._action_dim = action_dim  # Default determined by train config's dof config
-        
+
         self.action_dim = action_dim
         self.pred_horizon = action_horizon
         self.predict_mode = "diffusion"

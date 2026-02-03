@@ -1,6 +1,7 @@
 import argparse
 import time
 import os
+
 # from wall_x.utils.baseline_utils import check_baseline_dump, update_baseline
 from wall_x.infer.utils_libero import set_seed_everywhere, TaskSuite, TASK_MAX_STEPS
 from wall_x.infer.infer_config import InferConfig
@@ -16,7 +17,10 @@ if __name__ == "__main__":
         "--baseline_path", type=str, default=None, help="Path to baseline record table"
     )
     args.add_argument(
-        "--update_baseline", type=bool, default=False, help="Whether to update baseline table"
+        "--update_baseline",
+        type=bool,
+        default=False,
+        help="Whether to update baseline table",
     )
     args.add_argument(
         "--mode", type=str, default="flow", choices=["flow", "ar"], help="Running mode"
@@ -63,7 +67,10 @@ if __name__ == "__main__":
         help="Number of evaluation episodes to run per task",
     )
     args.add_argument(
-        "--rollout_dir", type=str, default="./rollouts", help="Directory to save rollout videos"
+        "--rollout_dir",
+        type=str,
+        default="./rollouts",
+        help="Directory to save rollout videos",
     )
     args = args.parse_args()
 
@@ -94,8 +101,8 @@ if __name__ == "__main__":
 
     print("Initializing LiberoRobotEnv (Evaluator)...")
 
-    config.action_dim=7
-    config.pred_horizon=10
+    config.action_dim = 7
+    config.pred_horizon = 10
 
     evaluator = LiberoRobotEnv(
         config=config,
@@ -213,4 +220,3 @@ if __name__ == "__main__":
     print(f"{'='*56}")
 
     print("Evaluation completed.")
-

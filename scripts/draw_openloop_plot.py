@@ -9,6 +9,7 @@ from wall_x.data.load_lerobot_dataset import load_test_dataset, get_data_configs
 from wall_x.model.model_utils import register_normalizers
 import copy
 
+
 def load_config(config_path):
     """Load configuration from YAML file."""
     with open(config_path, "r") as f:
@@ -31,27 +32,30 @@ if __name__ == "__main__":
     # get train config
     model_path = "/path/to/your/checkpoint"
     action_tokenizer_path = "/path/to/Models/fast"
-    save_dir = f"/path/to/save/dir"
+    save_dir = "/path/to/save/dir"
     path = f"{model_path}/config.yml"
     config = load_config(path)
 
-    normalizer_action, normalizer_propri = register_normalizers(config,model_path)
+    normalizer_action, normalizer_propri = register_normalizers(config, model_path)
 
     # load model with customized robot config
     model = Qwen2_5_VLMoEForAction.from_pretrained(
         model_path, train_config=config, action_tokenizer_path=action_tokenizer_path
     )
-    
-    model.set_normalizer(copy.deepcopy(normalizer_action), copy.deepcopy(normalizer_propri))
+
+    model.set_normalizer(
+        copy.deepcopy(normalizer_action), copy.deepcopy(normalizer_propri)
+    )
     model.eval()
     model = model.to("cuda")
     model.to_bfloat16_for_selected_params()
 
-
     # get test dataloader
     dataload_config = get_data_configs(config["data"])
     lerobot_config = dataload_config.get("lerobot_config", {})
-    dataset = load_test_dataset(config, lerobot_config, normalizer_action, normalizer_propri, seed=42)
+    dataset = load_test_dataset(
+        config, lerobot_config, normalizer_action, normalizer_propri, seed=42
+    )
     dataloader = dataset.get_dataloader()
     # dataloader = dataset.get_train_dataloader()
 

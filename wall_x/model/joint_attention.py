@@ -6,7 +6,9 @@ from transformers.models.qwen2_5_vl.configuration_qwen2_5_vl import Qwen2_5_VLCo
 from transformers.cache_utils import Cache
 from transformers.utils import logging
 from wall_x.fusions import ops
-from wall_x.model.qwen2_5_based.modeling_qwen2_5_vl import apply_multimodal_rotary_pos_emb
+from wall_x.model.qwen2_5_based.modeling_qwen2_5_vl import (
+    apply_multimodal_rotary_pos_emb,
+)
 from flash_attn import flash_attn_func
 from transformers.modeling_flash_attention_utils import (
     is_flash_attn_greater_or_equal_2_10,
@@ -36,7 +38,6 @@ logger = logging.get_logger(__name__)
 #     q_embed = (q * cos_split) + (rotate_half(q) * sin_split)
 #     k_embed = (k * cos_split) + (rotate_half(k) * sin_split)
 #     return q_embed, k_embed
-
 
 
 class JointQwen2VLAttention(nn.Module):
@@ -148,7 +149,9 @@ class JointQwen2VLAttention(nn.Module):
         if token_types is None:
             raise ValueError("token_types can not be None")
         if token_types.max() >= len(self.dim_inputs):
-            raise ValueError(f"token_types contains invalid expert indices: {token_types.max()}")
+            raise ValueError(
+                f"token_types contains invalid expert indices: {token_types.max()}"
+            )
 
         if self.config.mot_opt:
             bsz, q_len, _ = orig_shape
@@ -216,7 +219,9 @@ class JointQwen2VLAttention(nn.Module):
             ):  # [batch_size, num_heads, seq_len, seq_len]
                 causal_mask = attention_mask
             else:
-                raise ValueError(f"Unsupported attention_mask dim: {attention_mask.shape}")
+                raise ValueError(
+                    f"Unsupported attention_mask dim: {attention_mask.shape}"
+                )
 
             # convert the attention mask to bool type
             causal_mask = causal_mask.to(torch.bool)
@@ -426,10 +431,12 @@ class JointQwen2VLAttention(nn.Module):
                 cos.contiguous(),
                 sin.contiguous(),
                 self.rope_scaling["mrope_section"],
-                unsqueeze_dim
+                unsqueeze_dim,
             )
         else:
-            raise NotImplementedError(f"Unsupported model type: {self.config.model_type}")
+            raise NotImplementedError(
+                f"Unsupported model type: {self.config.model_type}"
+            )
         return query_states, key_states
 
     def _generate_output(self, attn_output, masks):
@@ -445,7 +452,7 @@ class JointQwen2VLAttention(nn.Module):
             dim_input = self.dim_inputs[expert_idx]
 
             # Obtain all necessary indexes in a single operation.
-            mask_indices = mask.nonzero(as_tuple=False) 
+            mask_indices = mask.nonzero(as_tuple=False)
             if mask_indices.numel() == 0:
                 continue
 
@@ -635,6 +642,7 @@ class JointQwen2VLFlashAttention(JointQwen2VLAttention):
             output = self._generate_output(attn_output, masks)
 
         return output, None, past_key_value
+
 
 JOINT_QWEN_ATTENTION_CLASSES = {
     "eager": JointQwen2VLAttention,

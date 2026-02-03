@@ -17,7 +17,7 @@ from wall_x.data.utils import (
 )
 
 from transformers import AutoProcessor
-from .utils import load_norm_stats, KEY_MAPPINGS
+from .utils import KEY_MAPPINGS
 
 T_co = TypeVar("T_co", covariant=True)
 
@@ -68,7 +68,7 @@ class PreprocessedDataset(Dataset[T_co]):
         self.config = config
         self.use_fast_tokenizer = self.config.get("use_fast_tokenizer", False)
         self.dataload_config = dataload_config
-        self.normalizer_action = normalizer_action,
+        self.normalizer_action = (normalizer_action,)
         self.normalizer_propri = normalizer_propri
         # self.norm_stats = norm_stats
         self.lerobot_config = lerobot_config
@@ -131,7 +131,7 @@ class PreprocessedDataset(Dataset[T_co]):
         frame_index = data["frame_index"]
         instruction_info = {"instruction": data["task"]}
         generate_subtask_ratio = self.data_config.generate_subtask_ratio
-        
+
         complete_text, generate_subtask = get_wallx_normal_text(
             instruction_info,
             self.dataload_config.get("action_horizon", 33) - 1,
@@ -192,7 +192,11 @@ class PreprocessedDataset(Dataset[T_co]):
             sampler=sampler,  # Use distributed sampler instead of shuffle=True
             num_workers=num_workers,
             collate_fn=DataCollator(
-                self.config, self.dataload_config, self.normalizer_action, self.normalizer_propri, self.lerobot_config
+                self.config,
+                self.dataload_config,
+                self.normalizer_action,
+                self.normalizer_propri,
+                self.lerobot_config,
             ),
             pin_memory=True,  # Enable for GPU training
             persistent_workers=num_workers > 0,  # Only if num_workers > 0
@@ -244,7 +248,14 @@ class DataCollator:
     _processor_cache = {}
     _action_tokenizer_cache = {}
 
-    def __init__(self, config, dataload_config, normalizer_action, normalizer_propri, lerobot_config):
+    def __init__(
+        self,
+        config,
+        dataload_config,
+        normalizer_action,
+        normalizer_propri,
+        lerobot_config,
+    ):
         self.config = config
         self.dataload_config = dataload_config
 
@@ -382,7 +393,9 @@ class DataCollator:
                 #         ],
                 #         dim=-1,
                 #     )
-                action = self.normalizer_action.normalize_data(action, self.dataset_name)
+                action = self.normalizer_action.normalize_data(
+                    action, self.dataset_name
+                )
                 additional_inputs["action_chunk"] = action
                 additional_inputs["dof_mask"] = dof_mask
             elif key == "image_inputs":
@@ -592,7 +605,14 @@ def get_data_configs(config):
 
 class TestDataset(PreprocessedDataset):
     def __init__(
-        self, dataset, config, dataload_config, normalizer_action, normalizer_propri, lerobot_config, seed=42
+        self,
+        dataset,
+        config,
+        dataload_config,
+        normalizer_action,
+        normalizer_propri,
+        lerobot_config,
+        seed=42,
     ):
         super().__init__(
             dataset,
@@ -616,7 +636,11 @@ class TestDataset(PreprocessedDataset):
             self,
             batch_size=1,
             collate_fn=DataCollator(
-                self.config, self.dataload_config, self.normalizer_action, self.normalizer_propri, self.lerobot_config
+                self.config,
+                self.dataload_config,
+                self.normalizer_action,
+                self.normalizer_propri,
+                self.lerobot_config,
             ),
         )
 
@@ -679,7 +703,13 @@ def load_test_dataset(
     print(f"Number of frames selected: {dataset.num_frames}")
 
     dataset = TestDataset(
-        dataset, config, dataload_config, normalizer_action, normalizer_propri, lerobot_config, seed=seed
+        dataset,
+        config,
+        dataload_config,
+        normalizer_action,
+        normalizer_propri,
+        lerobot_config,
+        seed=seed,
     )
 
     return dataset

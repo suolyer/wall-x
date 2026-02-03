@@ -3,8 +3,6 @@ from typing import Dict, Any, List
 import torch
 import copy
 import numpy as np
-from transformers import AutoProcessor
-import os
 from wall_x.serving.websocket_policy_server import BasePolicy
 from wall_x.model.qwen2_5_based.modeling_qwen2_5_vl_act import Qwen2_5_VLMoEForAction
 from wall_x.serving.policy.utils import prepare_batch
@@ -52,14 +50,18 @@ class WallXPolicy(BasePolicy):
         """
         logger.info(f"Loading Wall-X model from {model_path}")
 
-        self.normalizer_action, self.normalizer_propri = register_normalizers(train_config, model_path)
+        self.normalizer_action, self.normalizer_propri = register_normalizers(
+            train_config, model_path
+        )
 
         self.model = Qwen2_5_VLMoEForAction.from_pretrained(
             model_path,
             train_config=train_config,
             action_tokenizer_path=action_tokenizer_path,
         )
-        self.model.set_normalizer(copy.deepcopy(self.normalizer_action), copy.deepcopy(self.normalizer_propri))
+        self.model.set_normalizer(
+            copy.deepcopy(self.normalizer_action), copy.deepcopy(self.normalizer_propri)
+        )
         self.model.eval()
         self.model = self.model.to(device)
         self.model.to_bfloat16_for_selected_params()
@@ -81,8 +83,8 @@ class WallXPolicy(BasePolicy):
         self.image_factor = image_factor
         self.max_length = max_length
 
-        print("predict_mode",predict_mode)
-        print("camera_key",camera_key)
+        print("predict_mode", predict_mode)
+        print("camera_key", camera_key)
 
         # Load processor
         logger.info("Loading processor and tokenizer...")

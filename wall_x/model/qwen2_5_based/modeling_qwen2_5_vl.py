@@ -184,9 +184,6 @@ class Qwen2RMSNorm(nn.Module):
         return repr_str
 
 
-
-
-
 class Qwen2_5_VLPatchMerger(nn.Module):
     def __init__(self, dim: int, context_dim: int, spatial_merge_size: int = 2) -> None:
         super().__init__()
@@ -1159,7 +1156,9 @@ class Qwen2_5_VLSdpaAttention(Qwen2_5_VLAttention):
             ):  # [batch_size, num_heads, seq_len, seq_len]
                 causal_mask = attention_mask
             else:
-                raise ValueError(f"Unsupported attention_mask dim: {attention_mask.shape}")
+                raise ValueError(
+                    f"Unsupported attention_mask dim: {attention_mask.shape}"
+                )
 
             # Convert the attention mask to boolean type
             causal_mask = causal_mask.to(torch.bool)

@@ -38,12 +38,12 @@ class TokenTypeRouter(nn.Module):
 
     def forward(self, token_types: torch.Tensor) -> torch.Tensor:
         """
-        Assigns tokens to different experts based on `token_type`. 
+        Assigns tokens to different experts based on `token_type`.
         Args:
-            token_types (torch.Tensor): A tensor of shape (batch_size, seq_length) representing the type of each token. 
+            token_types (torch.Tensor): A tensor of shape (batch_size, seq_length) representing the type of each token.
 
         Returns:
-            experts_indices (torch.Tensor): A tensor of shape (batch_size, seq_length) representing the expert index assigned to each token. 
+            experts_indices (torch.Tensor): A tensor of shape (batch_size, seq_length) representing the expert index assigned to each token.
         """
         experts_indices = token_types % self.num_experts
         return experts_indices
@@ -159,9 +159,13 @@ class ActionModelMixMin:
 
     def set_normalizer(self, normalizer_action, normalizer_propri):
         if hasattr(self, "action_preprocessor"):
-            self.action_preprocessor.set_normalizer(normalizer_action, normalizer_propri)
+            self.action_preprocessor.set_normalizer(
+                normalizer_action, normalizer_propri
+            )
         else:
-            logger.warning("ActionModelMixMin.set_normalizer is called but action_preprocessor is not set")
+            logger.warning(
+                "ActionModelMixMin.set_normalizer is called but action_preprocessor is not set"
+            )
 
     def _apply_mlp_moe(self, hidden_states, token_types, start_indices, end_indices):
         if self.config.mlp_moe:
@@ -669,7 +673,7 @@ class ActionGenerationMixin(GenerationMixin):
                 if isinstance(module, nn.Module) and any(
                     k in name.lower() for k in ["action_preprocessor"]
                 ):
-                    if any(True for _ in module.children()): 
+                    if any(True for _ in module.children()):
                         continue
                     if getattr(module, "_fsdp_wrapped", False):
                         continue
@@ -790,7 +794,7 @@ class ActionGenerationMixin(GenerationMixin):
             None,
             None,
             None,
-            )
+        )
 
         if labels is not None:
             action_accuracy = 0

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-import argparse
 import json
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Iterator, List, Tuple
+from typing import Dict, List
 from tqdm import tqdm
 
 import numpy as np
@@ -13,12 +12,12 @@ import numpy as np
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
 
 
-
 def write_json(path: Path, data: Dict) -> None:
     path.write_text(
         json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
 
 def compute_action_statistics(
     action_data_by_robot: Dict[str, Dict[str, List]]
@@ -96,14 +95,12 @@ def load_lerobot_dataset(
     trajectory_keys: Dict,
     base_dir: Path,
 ) -> None:
-    
+
     # Load local or remote dataset
     dataset = LeRobotDataset(base_dir)
 
     # Iterate through all data
-    frames: Dict[str, Dict[str, List]] = defaultdict(
-        lambda: defaultdict(list)
-    )
+    frames: Dict[str, Dict[str, List]] = defaultdict(lambda: defaultdict(list))
 
     all_features = dataset.features
     non_image_columns = [col for col in all_features if "image" not in col]
@@ -113,21 +110,26 @@ def load_lerobot_dataset(
 
     for i in tqdm(range(len(fast_dataset))):
         sample = fast_dataset[i]
-        action = sample["action"]             # torch.Tensor
-        propri  = sample["observation.state"] 
+        action = sample["action"]  # torch.Tensor
+        propri = sample["observation.state"]
 
         for key, action_keys in trajectory_keys.items():
             for action_key, action_range in action_keys.items():
-                if  key == "action":
-                    frames[repo_id][action_key].append(action[action_range[0]:action_range[1]].numpy().tolist())
+                if key == "action":
+                    frames[repo_id][action_key].append(
+                        action[action_range[0] : action_range[1]].numpy().tolist()
+                    )
                 else:
-                    frames[repo_id][action_key].append(propri[action_range[0]:action_range[1]].numpy().tolist())
+                    frames[repo_id][action_key].append(
+                        propri[action_range[0] : action_range[1]].numpy().tolist()
+                    )
 
     return frames
 
 
-
-def compute_action_normalizer(repo_id: str, trajectory_keys: Dict, base_dir: Path, output_dir: Path) -> None:
+def compute_action_normalizer(
+    repo_id: str, trajectory_keys: Dict, base_dir: Path, output_dir: Path
+) -> None:
     """
     Compute action normalizer statistics for all robot_ids.
     """
@@ -138,8 +140,8 @@ def compute_action_normalizer(repo_id: str, trajectory_keys: Dict, base_dir: Pat
         lambda: defaultdict(list)
     )
 
-    frames = load_lerobot_dataset(repo_id,trajectory_keys, base_dir)
-    
+    frames = load_lerobot_dataset(repo_id, trajectory_keys, base_dir)
+
     # Compute statistics
     stats = compute_action_statistics(frames)
 
@@ -160,23 +162,25 @@ def compute_action_normalizer(repo_id: str, trajectory_keys: Dict, base_dir: Pat
 
 def main() -> None:
 
-    repo_id = "xxx" # your dataset name
+    repo_id = "xxx"  # your dataset name
     data_root_path = "/path/to/lerobot/dataset"
     output_stats_dir = "/path/to/save/action_stats"
-    trajectory_keys = {                             # your dataset keys
-        "action":{
-            "follow_right_ee_cartesian_pos": [0,3],
-            "follow_right_ee_rotation": [3,6],
-            "follow_right_gripper": [6,7]
+    trajectory_keys = {  # your dataset keys
+        "action": {
+            "follow_right_ee_cartesian_pos": [0, 3],
+            "follow_right_ee_rotation": [3, 6],
+            "follow_right_gripper": [6, 7],
         },
-        "propri":{
-            "master_right_ee_cartesian_pos": [0,3],
-            "master_right_ee_rotation": [3,6],
-            "master_right_gripper": [6,7]
-        }
+        "propri": {
+            "master_right_ee_cartesian_pos": [0, 3],
+            "master_right_ee_rotation": [3, 6],
+            "master_right_gripper": [6, 7],
+        },
     }
 
-    compute_action_normalizer(repo_id, trajectory_keys, data_root_path, output_stats_dir)
+    compute_action_normalizer(
+        repo_id, trajectory_keys, data_root_path, output_stats_dir
+    )
     logging.info("Action normalizer computation completed.")
 
 

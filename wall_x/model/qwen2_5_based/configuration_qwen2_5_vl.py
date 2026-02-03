@@ -43,7 +43,7 @@ class Qwen2_5_VLVisionConfig(PretrainedConfig):
         self.out_hidden_size = out_hidden_size
         self.initializer_range = initializer_range
         self._attn_implementation = _attn_implementation
-        self.attn_deterministic=attn_deterministic
+        self.attn_deterministic = attn_deterministic
 
 
 class Qwen2_5_VLConfig(PretrainedConfig):
@@ -259,7 +259,7 @@ class Qwen2_5_VLConfig(PretrainedConfig):
         self.action_horizon_flow = action_horizon_flow
         self.causal_action_attention_mask = causal_action_attention_mask
         self.use_x_pred = use_x_pred
-        self.attn_deterministic=attn_deterministic
+        self.attn_deterministic = attn_deterministic
 
         # Validate the correctness of rotary position embeddings parameters
         # BC: if there is a 'type' field, move it to 'rope_type'.
