@@ -120,21 +120,23 @@ class PreprocessedDataset(Dataset[T_co]):
                 "(action=%s, state=%s; raw action dim=%s → %s)",
                 self._convert_action_euler_to_6d,
                 self._convert_state_euler_to_6d,
-                _euler_layout_dim(self._dof_config)
-                if self._convert_action_euler_to_6d
-                else "-",
-                sum(
-                    d
-                    for k, d in self._dof_config.items()
-                    if k not in RELATIVE_SKIP_KEYS
-                )
-                if self._convert_action_euler_to_6d
-                else "-",
+                (
+                    _euler_layout_dim(self._dof_config)
+                    if self._convert_action_euler_to_6d
+                    else "-"
+                ),
+                (
+                    sum(
+                        d
+                        for k, d in self._dof_config.items()
+                        if k not in RELATIVE_SKIP_KEYS
+                    )
+                    if self._convert_action_euler_to_6d
+                    else "-"
+                ),
             )
 
-    def _maybe_convert_euler_to_6d(
-        self, vec, layout_config: dict, enabled: bool
-    ):
+    def _maybe_convert_euler_to_6d(self, vec, layout_config: dict, enabled: bool):
         converted = maybe_convert_euler_to_6d(vec, layout_config, enabled)
         if (
             enabled

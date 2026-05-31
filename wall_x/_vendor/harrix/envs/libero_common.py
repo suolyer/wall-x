@@ -58,6 +58,7 @@ def _build_right_arm_state_values(obs_ndarrays: dict) -> dict[str, np.ndarray]:
     values["right_ee_rotation_6D"] = rot6d.astype(np.float32)
     return values
 
+
 # Auxiliary action keys that should be masked out for single-arm LIBERO.
 _DOF_MASK_ZERO_KEYS = frozenset(
     (
@@ -127,9 +128,7 @@ def encode_raw_obs(raw_obs: dict) -> dict:
         "eef_axisangle": np.asarray(
             _quat2axisangle(raw_obs["robot0_eef_quat"]), dtype=np.float32
         ),
-        "gripper": np.asarray(
-            raw_obs["robot0_gripper_qpos"][0:1], dtype=np.float32
-        ),
+        "gripper": np.asarray(raw_obs["robot0_gripper_qpos"][0:1], dtype=np.float32),
         "face_view": _get_libero_image(raw_obs),
         "wrist_view": _get_libero_wrist_image(raw_obs),
     }

@@ -35,7 +35,6 @@ import asyncio
 import base64
 import json
 import logging
-import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -95,7 +94,11 @@ def _task_block(train_config: dict[str, Any]) -> dict[str, Any]:
 
 
 def _dof_config(train_config: dict[str, Any]) -> dict[str, int]:
-    return train_config.get("dof_config") or _task_block(train_config).get("dof_config") or {}
+    return (
+        train_config.get("dof_config")
+        or _task_block(train_config).get("dof_config")
+        or {}
+    )
 
 
 def _agent_pos_config(train_config: dict[str, Any]) -> dict[str, int]:
@@ -199,7 +202,9 @@ def build_state_payload(
     if agent_cfg:
         real_dim = real_vector_dim(agent_cfg)
         if real_dim > 0 and state_vec.shape[0] >= real_dim:
-            follow2 = slice_by_config(state_vec[: max(state_vec.shape[0], real_dim)], agent_cfg)
+            follow2 = slice_by_config(
+                state_vec[: max(state_vec.shape[0], real_dim)], agent_cfg
+            )
             if follow2.shape[0] == 0:
                 follow2 = state_vec[:real_dim]
             return {"follow2_pos": follow2.tolist()}
@@ -423,9 +428,9 @@ def plot_openloop(
 
     gt_rows = np.asarray(action_gt_list, dtype=np.float32)
     pred_rows = np.asarray(action_pred_list, dtype=np.float32)
-    assert gt_rows.shape == pred_rows.shape, (
-        f"shape mismatch: pred={pred_rows.shape} gt={gt_rows.shape}"
-    )
+    assert (
+        gt_rows.shape == pred_rows.shape
+    ), f"shape mismatch: pred={pred_rows.shape} gt={gt_rows.shape}"
     n, dim = gt_rows.shape
 
     fig, axes = plt.subplots(dim, 1, figsize=(12, 3.5 * dim), sharex=True)
@@ -595,7 +600,9 @@ async def run_openloop_eval(
 
             ep_tag = f"ep{ep_idx}"
             valid_mask = ~np.isnan(pred_full).any(axis=1)
-            action_l1 = float(np.mean(np.abs(pred_full[valid_mask] - gt_full[valid_mask])))
+            action_l1 = float(
+                np.mean(np.abs(pred_full[valid_mask] - gt_full[valid_mask]))
+            )
             summary = {
                 "episode_index": ep_idx,
                 "instruction": episode.instruction,
@@ -616,7 +623,9 @@ async def run_openloop_eval(
 
             ml = min(len(aligned_gt), len(aligned_pred))
             if ml < 3:
-                logger.warning("Episode %d: too few aligned rows (%d) to plot.", ep_idx, ml)
+                logger.warning(
+                    "Episode %d: too few aligned rows (%d) to plot.", ep_idx, ml
+                )
                 continue
 
             gt_ml = np.asarray(aligned_gt[:ml], dtype=np.float32)
@@ -643,7 +652,6 @@ async def run_openloop_eval(
 
 
 def parse_args() -> argparse.Namespace:
-    repo = _repo_root()
     parser = argparse.ArgumentParser(
         description="Open-loop websocket inference on LeRobot datasets.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,

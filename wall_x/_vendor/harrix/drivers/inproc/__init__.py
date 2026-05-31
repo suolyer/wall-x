@@ -71,9 +71,7 @@ def run(cfg: EvalConfig) -> None:
             time.sleep(0.05)
             continue
 
-        results = _run_frame(
-            frame_eps, model_handle, env_handles, cfg, frame_idx
-        )
+        results = _run_frame(frame_eps, model_handle, env_handles, cfg, frame_idx)
         for ep, res in zip(frame_eps, results):
             if "_error" in res:
                 state.fail(ep, str(res["_error"]))

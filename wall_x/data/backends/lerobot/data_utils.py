@@ -725,7 +725,9 @@ def relative_to_actions(relative_actions, start_pose, one_by_one_relative=False)
         actions: numpy array of shape [horizon, action_dim]
                 start_pose plus converted absolute pose sequence
     """
-    horizon = relative_actions.shape[0] + 1  # +1 because relative_actions excludes frame 0
+    horizon = (
+        relative_actions.shape[0] + 1
+    )  # +1 because relative_actions excludes frame 0
     actions = np.zeros((horizon, relative_actions.shape[1]))
 
     # set frame 0 to start_pose
@@ -929,7 +931,7 @@ def smooth_data(
                 smooth_data_result, window_length, polyorder
             )
 
-    # extra Gaussian pass when strong_smooth
+        # extra Gaussian pass when strong_smooth
         if strong_smooth:
             smooth_data_result = gaussian_filter1d(smooth_data_result, sigma=2.0)
 
@@ -979,7 +981,7 @@ def process_car_pose_to_base_velocity(
     if len(car_pose) == 1:
         return {
             "base_velocity_decomposed": np.zeros((1, 3)),
-"valid": True,  # single point treated as valid
+            "valid": True,  # single point treated as valid
         }
 
     # Step 1: extract pose and unwrap angles

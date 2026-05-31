@@ -32,22 +32,30 @@ def pad_text_input_to_target_length(
             device=text_inputs.attention_mask.device,
         )
         if padding_side == "right":
-            text_inputs["input_ids"] = torch.cat([text_inputs.input_ids, padding], dim=1)
+            text_inputs["input_ids"] = torch.cat(
+                [text_inputs.input_ids, padding], dim=1
+            )
             text_inputs["attention_mask"] = torch.cat(
                 [text_inputs.attention_mask, attention_padding], dim=1
             )
         else:
-            text_inputs["input_ids"] = torch.cat([padding, text_inputs.input_ids], dim=1)
+            text_inputs["input_ids"] = torch.cat(
+                [padding, text_inputs.input_ids], dim=1
+            )
             text_inputs["attention_mask"] = torch.cat(
                 [attention_padding, text_inputs.attention_mask], dim=1
             )
     elif current_length > target_length:
         if padding_side == "right":
             text_inputs["input_ids"] = text_inputs.input_ids[:, :target_length]
-            text_inputs["attention_mask"] = text_inputs.attention_mask[:, :target_length]
+            text_inputs["attention_mask"] = text_inputs.attention_mask[
+                :, :target_length
+            ]
         else:
             text_inputs["input_ids"] = text_inputs.input_ids[:, -target_length:]
-            text_inputs["attention_mask"] = text_inputs.attention_mask[:, -target_length:]
+            text_inputs["attention_mask"] = text_inputs.attention_mask[
+                :, -target_length:
+            ]
     return text_inputs
 
 
@@ -106,7 +114,9 @@ def preprocesser_call(
     batch_size = len(prefix_text)
 
     if images is not None and len(images) > 0:
-        image_inputs = processor.image_processor(images=images, return_tensors=return_tensors)
+        image_inputs = processor.image_processor(
+            images=images, return_tensors=return_tensors
+        )
         image_grid_thw = image_inputs["image_grid_thw"]
     else:
         image_inputs = {}
@@ -114,7 +124,9 @@ def preprocesser_call(
 
     if videos is not None:
         if hasattr(processor, "video_processor"):
-            videos_inputs = processor.video_processor(videos=videos, return_tensors=return_tensors)
+            videos_inputs = processor.video_processor(
+                videos=videos, return_tensors=return_tensors
+            )
         else:
             videos_inputs = processor.image_processor(
                 images=None, videos=videos, return_tensors=return_tensors
@@ -133,13 +145,19 @@ def preprocesser_call(
     )
 
     if norm_state is not None:
-        norm_state = norm_state.cpu().numpy() if isinstance(norm_state, torch.Tensor) else norm_state
+        norm_state = (
+            norm_state.cpu().numpy()
+            if isinstance(norm_state, torch.Tensor)
+            else norm_state
+        )
         agent_pos_mask = (
             agent_pos_mask[:, 0, :].cpu().numpy().astype(bool)
             if isinstance(agent_pos_mask, torch.Tensor)
             else agent_pos_mask[:, 0, :].astype(bool)
         )
-        discretized = np.digitize(norm_state, bins=np.linspace(-1, 1, state_bins + 1)[:-1]) - 1
+        discretized = (
+            np.digitize(norm_state, bins=np.linspace(-1, 1, state_bins + 1)[:-1]) - 1
+        )
         discretized = discretized[:, 0, :]
         for i in range(batch_size):
             if "<|propri|>" not in prefix_text[i]:
@@ -177,7 +195,9 @@ def preprocesser_call(
         )
         text_inputs = BatchEncoding(
             data={
-                "input_ids": torch.cat([prefix_inputs.input_ids, postfix_inputs.input_ids], dim=1),
+                "input_ids": torch.cat(
+                    [prefix_inputs.input_ids, postfix_inputs.input_ids], dim=1
+                ),
                 "attention_mask": torch.cat(
                     [prefix_inputs.attention_mask, postfix_inputs.attention_mask], dim=1
                 ),
@@ -189,16 +209,23 @@ def preprocesser_call(
     if pad_token_id is None:
         pad_token_id = processor.tokenizer.eos_token_id
     if pad_to_128_multiple:
-        target_length = 128 * ((max(len(t) for t in text_inputs.input_ids) + 127) // 128)
+        target_length = 128 * (
+            (max(len(t) for t in text_inputs.input_ids) + 127) // 128
+        )
         text_inputs = pad_text_input_to_target_length(
-            text_inputs, target_length, pad_token_id=pad_token_id, padding_side=padding_side
+            text_inputs,
+            target_length,
+            pad_token_id=pad_token_id,
+            padding_side=padding_side,
         )
 
     text_inputs["labels"] = None if inference_mode else None
     return BatchFeature(data={**text_inputs, **image_inputs, **videos_inputs})
 
 
-def get_prologue_with_embodied_information(dataset_name, cam_mapping, robot_id, uid, config):
+def get_prologue_with_embodied_information(
+    dataset_name, cam_mapping, robot_id, uid, config
+):
     """Return a generic VLA system prompt without private robot maps."""
     role_start = "<|im_start|>"
     role_end = "<|im_end|>"
@@ -208,7 +235,9 @@ def get_prologue_with_embodied_information(dataset_name, cam_mapping, robot_id, 
         "with language instructions."
     )
     if cam_mapping:
-        cameras = ", ".join(str(name).replace("_", " ") for name in cam_mapping.values())
+        cameras = ", ".join(
+            str(name).replace("_", " ") for name in cam_mapping.values()
+        )
         prologue += f"\nCamera Setup: {cameras}"
     if not getattr(config, "use_relative_action", False):
         prologue += "\nAction Space: Abs EEF"

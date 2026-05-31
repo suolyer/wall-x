@@ -124,9 +124,9 @@ def read_global_step(checkpoint_path: str) -> int | None:
 
 
 def _dir_has_weights(path: str) -> bool:
-    return os.path.exists(os.path.join(path, "pytorch_model_fsdp.bin")) or os.path.exists(
-        os.path.join(path, "model.safetensors")
-    )
+    return os.path.exists(
+        os.path.join(path, "pytorch_model_fsdp.bin")
+    ) or os.path.exists(os.path.join(path, "model.safetensors"))
 
 
 def resolve_checkpoint_dir(checkpoint_path: str) -> str:

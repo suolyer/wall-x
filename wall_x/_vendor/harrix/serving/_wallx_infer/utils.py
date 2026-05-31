@@ -44,7 +44,9 @@ class KeyboardThread(threading.Thread):
                     self.logger.info(f"[keyboard] switch instruction index: {index}")
 
                 else:
-                    self.logger.info(f"[keyboard] input: {user_input}. no action taken.")
+                    self.logger.info(
+                        f"[keyboard] input: {user_input}. no action taken."
+                    )
 
             except EOFError:
                 break

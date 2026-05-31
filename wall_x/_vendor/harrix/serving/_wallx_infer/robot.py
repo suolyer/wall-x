@@ -3,8 +3,13 @@ from abc import ABC
 import re
 
 from wall_x._vendor.harrix.serving._wallx_infer.infer_config import InferConfig
-from wall_x._vendor.harrix.serving._wallx_infer.utils import VehiclePoseHandler, UnifiedTrajectoryProcessor
-from wall_x._vendor.harrix.serving._wallx_infer.base_dataclass import RobotStateActionData
+from wall_x._vendor.harrix.serving._wallx_infer.utils import (
+    VehiclePoseHandler,
+    UnifiedTrajectoryProcessor,
+)
+from wall_x._vendor.harrix.serving._wallx_infer.base_dataclass import (
+    RobotStateActionData,
+)
 from wall_x._vendor.harrix.serving._wallx_infer.socket_controller import RobotController
 
 from wall_x._vendor.harrix.serving._wallx_infer.logger import InferLogger
@@ -48,7 +53,9 @@ robot_action_key_mapping = {
 }
 
 
-def _views_to_camera_observation(config: InferConfig, views: dict) -> dict[str, np.ndarray]:
+def _views_to_camera_observation(
+    config: InferConfig, views: dict
+) -> dict[str, np.ndarray]:
     """Map websocket camera keys to model observation keys."""
     camera_mappings = {
         "face_view": [config.camera_front_key, "face_view", "front_view"],
@@ -78,9 +85,7 @@ def _views_to_camera_observation(config: InferConfig, views: dict) -> dict[str, 
                     observation[obs_key] = view_data
                 break
         else:
-            raise KeyError(
-                f"Missing view for {obs_key!r}, tried keys: {possible_keys}"
-            )
+            raise KeyError(f"Missing view for {obs_key!r}, tried keys: {possible_keys}")
     return observation
 
 

@@ -102,15 +102,15 @@ class WallXPolicy(BasePolicy):
             or {}
         )
         skip = {"action_padding"}
-        has_left = any(
-            k.startswith("follow_left_") for k in agent_pos if k not in skip
-        )
+        has_left = any(k.startswith("follow_left_") for k in agent_pos if k not in skip)
         has_right = any(
             k.startswith("follow_right_") for k in agent_pos if k not in skip
         )
         return has_right and not has_left
 
-    def _pack_action_chunk_response(self, model_output: Dict[str, Any]) -> Dict[str, Any]:
+    def _pack_action_chunk_response(
+        self, model_output: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Return a msgpack-safe action chunk for websocket clients."""
         predict_action = model_output["predict_action"]
         if isinstance(predict_action, torch.Tensor):

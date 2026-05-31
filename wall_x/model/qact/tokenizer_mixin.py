@@ -937,7 +937,6 @@ class SpatialVLATokenizerMixin(ActionTokenizerMixin):
         return {"ar_action_mask": ar_action_mask}
 
 
-
 class X2RobotV31DeltaTokenizerMixin(ActionTokenizerMixin):
     """X2Robot V3.1 Delta tokenizer implementation"""
 

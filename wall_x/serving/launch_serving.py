@@ -26,8 +26,6 @@ def get_wallx_policy(model_config, image_passing_mode, serialize_actions=True):
     )
 
 
-
-
 logger = logging.getLogger(__name__)
 
 

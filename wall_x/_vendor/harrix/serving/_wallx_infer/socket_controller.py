@@ -90,7 +90,9 @@ class RobotCommunication:
         port = self.robot_info["action_port"]
         self.action_sock.bind((host, port))
         self.action_sock.listen(1)
-        self.logger.info(f"Listening on action port: {host}:{self.action_sock.getsockname()[1]}")
+        self.logger.info(
+            f"Listening on action port: {host}:{self.action_sock.getsockname()[1]}"
+        )
 
         action_thread = threading.Thread(target=self.handle_action_client)
 
@@ -227,9 +229,7 @@ class DummyRobotController:
         self.state_path = state_path or os.environ.get("WALL_X_DUMMY_STATE_PATH")
         self.robot_comm = DummyRobotCommunication()
         self.logger = InferLogger.get_controller_logger("DummyRobotController")
-        self.logger.info(
-            f"Init virtual robot controller (debug): robot_id={robot_id}"
-        )
+        self.logger.info(f"Init virtual robot controller (debug): robot_id={robot_id}")
 
     def connect(self):
         self.logger.debug("Virtual controller connect (no-op)")

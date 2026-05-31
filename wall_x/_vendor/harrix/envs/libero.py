@@ -149,9 +149,7 @@ class LiberoEnv(BaseEnv):
                 f"env bound to suite={self._task_suite_name}, got ep with suite={suite}"
             )
 
-        need_rebuild = (
-            self._rebuild_env_per_episode or self._current_task_id != task_id
-        )
+        need_rebuild = self._rebuild_env_per_episode or self._current_task_id != task_id
         if need_rebuild:
             self._rebuild_env(task_id)
 
@@ -233,11 +231,7 @@ class LiberoEnv(BaseEnv):
                 done = True
                 # Do not add an extra simulator step on early success; just make
                 # sure future rendering is enabled.
-                if (
-                    skip_render
-                    and self._image_obs
-                    and not self._render_enabled_state
-                ):
+                if skip_render and self._image_obs and not self._render_enabled_state:
                     set_render_enabled(self._image_obs, True)
                     self._render_enabled_state = True
                 break

@@ -37,9 +37,7 @@ def _get_class(cfg: EvalConfig) -> Type[BaseEnv]:
                     "Install LIBERO/robosuite and their simulator dependencies "
                     "before using env.type='libero'."
                 ) from exc
-        raise ValueError(
-            f"unknown env type={t!r}, registered: {sorted(_REGISTRY)}"
-        )
+        raise ValueError(f"unknown env type={t!r}, registered: {sorted(_REGISTRY)}")
     return cls
 
 

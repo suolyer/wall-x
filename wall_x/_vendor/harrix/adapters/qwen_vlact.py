@@ -25,7 +25,10 @@ from wall_x._vendor.x2robot_utils.text_templates import (
 from wall_x._vendor.harrix.adapters.base import BaseInferAdapter
 from wall_x._vendor.harrix.envs.libero_common import decode_chunk, encode_proprio
 from wall_x._vendor.harrix.eval_config import EvalConfig
-from wall_x._vendor.harrix.utils.ckpt_load import load_state_dict, resolve_checkpoint_dir
+from wall_x._vendor.harrix.utils.ckpt_load import (
+    load_state_dict,
+    resolve_checkpoint_dir,
+)
 from wall_x._vendor.harrix.utils.normalizer import build_normalizers
 from wall_x._vendor.harrix.utils.train_config import (
     build_data_config,
@@ -65,9 +68,7 @@ class QwenVLActInferAdapter(BaseInferAdapter):
     @classmethod
     def _training_adapter(cls):
         """Return the training-side ModelAdapter subclass."""
-        raise NotImplementedError(
-            f"{cls.__name__} must override _training_adapter()"
-        )
+        raise NotImplementedError(f"{cls.__name__} must override _training_adapter()")
 
     # ---- ctor ----
 
@@ -110,9 +111,7 @@ class QwenVLActInferAdapter(BaseInferAdapter):
         self._norm_key = resolved_norm_key
 
         # 3) data_config. Image resizing needs resolution/image_factor/min/max.
-        self._data_config = build_data_config(
-            cfg.model.train_config_path, train_config
-        )
+        self._data_config = build_data_config(cfg.model.train_config_path, train_config)
 
         # 4) HF model config
         ConfigClass = ta.config_class()
@@ -208,7 +207,9 @@ class QwenVLActInferAdapter(BaseInferAdapter):
         any_noise = False
         for p in payloads:
             observations.append(
-                encode_proprio(p["observation"], self._train_config, self._action_horizon)
+                encode_proprio(
+                    p["observation"], self._train_config, self._action_horizon
+                )
             )
             instructions.append(p["instruction"])
             n = p.get("noise")
@@ -265,14 +266,19 @@ class QwenVLActInferAdapter(BaseInferAdapter):
         predict_action = model_output["predict_action"]  # (B, H, D_action)
         if isinstance(predict_action, torch.Tensor):
             predict_action = predict_action.detach().cpu().numpy()
-        return [decode_chunk(predict_action[i : i + 1], self._train_config) for i in range(len(payloads))]
+        return [
+            decode_chunk(predict_action[i : i + 1], self._train_config)
+            for i in range(len(payloads))
+        ]
 
     # ---- prompt template ----
 
     def _get_flow_prompt(self, instruction: str) -> tuple[str, str]:
         """Build the flow-action prompt."""
         if self._train_config["data"].get("use_embodied_system_prompt_ratio", 0) > 0:
-            robot_id = self._robot_id if self._norm_key in ("x2_normal", "ex_normal") else 0
+            robot_id = (
+                self._robot_id if self._norm_key in ("x2_normal", "ex_normal") else 0
+            )
             cam_name_mapping = {cn: cn for cn in self._cam_names}
             prologue = get_prologue_with_embodied_information(
                 dataset_name=self._norm_key,
@@ -282,22 +288,17 @@ class QwenVLActInferAdapter(BaseInferAdapter):
                 config=self._data_config,
             )
         else:
-            prologue = (
-                f"{_ROLE_START}system\nYou are a helpful assistant.{_ROLE_END}\n"
-            )
+            prologue = f"{_ROLE_START}system\nYou are a helpful assistant.{_ROLE_END}\n"
         user_request = f"{_ROLE_START}user\nObservation:"
         for cn in self._cam_names:
             user_request += (
-                f" {_camera_label(cn)}: "
-                f"{_VISION_START}{_IMAGE_PAD}{_VISION_END}"
+                f" {_camera_label(cn)}: " f"{_VISION_START}{_IMAGE_PAD}{_VISION_END}"
             )
         user_request += "\nInstruction:"
         text_prompt = (
             f"\nPredict the next action in robot action.\nProprioception: {_PROPRI}\n"
         )
-        user_message = (
-            f"{user_request} {instruction}{text_prompt}{_ROLE_END}\n"
-        )
+        user_message = f"{user_request} {instruction}{text_prompt}{_ROLE_END}\n"
         assistant_message = f"{_ROLE_START}assistant\n"
         flow_action = _ACTION * self._action_horizon
 

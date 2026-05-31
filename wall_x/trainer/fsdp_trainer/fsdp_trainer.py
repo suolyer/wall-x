@@ -137,16 +137,18 @@ class FSDPTrainer(DistributedTrainer):
             "delta_key": norm_cfg.get("delta_key", "delta"),
         }
         if custom_path:
-            self.normalizer_action, self.normalizer_propri, self._action_statistic_dof = (
-                create_normalizers(merged)
-            )
+            (
+                self.normalizer_action,
+                self.normalizer_propri,
+                self._action_statistic_dof,
+            ) = create_normalizers(merged)
             return
 
         # LeRobot finetune: reuse collator stats (q01/q99 JSON) for the model
         # normalizer. ``dataset_names`` in the batch is ``lerobot_config.repo_id``.
-        norm_stats_path = getattr(self.cfg.data, "norm_stats_path", None) or raw_data.get(
-            "norm_stats_path"
-        )
+        norm_stats_path = getattr(
+            self.cfg.data, "norm_stats_path", None
+        ) or raw_data.get("norm_stats_path")
         lerobot_cfg = getattr(self.cfg.data, "lerobot_config", None) or raw_data.get(
             "lerobot_config", {}
         )

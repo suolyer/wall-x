@@ -1,6 +1,5 @@
 import os
 import torch
-import json
 import copy
 from safetensors.torch import load_file
 import numpy as np
@@ -25,7 +24,6 @@ from wall_x._vendor.harrix.utils.train_config import (
     resolve_state_bins,
     resolve_use_state_string_representation,
 )
-from wall_x.model.core.action.normalizer import Normalizer
 from wall_x._vendor.harrix.serving._wallx_infer.logger import InferLogger
 from wall_x.utils.timers import timer, ScopeTimer
 
@@ -578,7 +576,7 @@ class WallxModelWrapper:
         """
         assert len(observations) == len(
             instructions
-), "observations and instructions must have the same length"
+        ), "observations and instructions must have the same length"
         batch_size = len(observations)
 
         prefix_list = []

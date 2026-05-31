@@ -12,7 +12,6 @@ import json
 import logging
 import os
 
-import torch
 
 from wall_x.data.backends.lerobot.utils import load_norm_stats
 from wall_x.model.core.action.normalizer import Normalizer
@@ -44,8 +43,7 @@ def _layout_configs(train_config: dict) -> tuple[dict, dict, dict]:
     )
     data = train_config.get("data") or {}
     key_mappings = dict(
-        data.get("key_mappings")
-        or {"action": "action", "state": "observation.state"}
+        data.get("key_mappings") or {"action": "action", "state": "observation.state"}
     )
     return dof_config, agent_pos_config, key_mappings
 
@@ -58,7 +56,9 @@ def _load_custom_action_stats(train_config: dict) -> dict | None:
         return json.load(f)
 
 
-def _normalizer_from_stats(action_stats: dict, train_config: dict, key: str) -> Normalizer:
+def _normalizer_from_stats(
+    action_stats: dict, train_config: dict, key: str
+) -> Normalizer:
     return Normalizer(
         action_stats,
         train_config[key],

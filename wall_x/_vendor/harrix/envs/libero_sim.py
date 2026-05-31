@@ -141,9 +141,7 @@ def pick_initial_state(
         return default_states[episode_idx]
 
     if custom_initial_states is None:
-        raise ValueError(
-            f"custom initial states not loaded for {initial_states_path}"
-        )
+        raise ValueError(f"custom initial states not loaded for {initial_states_path}")
     key = task_desc.replace(" ", "_")
     ep_key = f"demo_{episode_idx}"
     record = custom_initial_states[key][ep_key]

@@ -101,9 +101,7 @@ class JobState:
             cur_bucket.append(ep)
         if cur_bucket:
             for i in range(0, len(cur_bucket), batch_size):
-                frames.append(
-                    {"eps": cur_bucket[i : i + batch_size], "next_slot": 0}
-                )
+                frames.append({"eps": cur_bucket[i : i + batch_size], "next_slot": 0})
         return frames
 
     @staticmethod

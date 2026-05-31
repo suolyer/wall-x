@@ -11,8 +11,8 @@ from torch.autograd import Function
 def _m():
     """Get the JIT-compiled CUDA extension module."""
     from wall_x.model.core.ops._cuda_ext import load
-    return load()
 
+    return load()
 
 
 def _get_sm_count():
@@ -68,8 +68,6 @@ class Rmsnorm:
             self.lib.rmsnorm(output, input, weight, epsilon)
             return output
         return _RmsnormFunction.apply(input, weight, epsilon)
-
-
 
 
 class _RopeFunction(Function):
@@ -154,8 +152,6 @@ class Rope:
             self.fwd_kernel,
             self.bwd_kernel,
         )
-
-
 
 
 class _MRopeFunction(Function):
@@ -250,8 +246,6 @@ class MRope:
         )
 
 
-
-
 class RotPos:
     def __init__(self):
         pass
@@ -285,8 +279,6 @@ class RotPos:
         rot_pos_kernel(inv_freq, grid_thw, output, cumsum_tokens, spatial_merge_size)
 
         return output
-
-
 
 
 class GetRopeIndex:
@@ -338,7 +330,6 @@ class GetRopeIndex:
         )
 
         return position_ids, mrope_deltas
-
 
 
 get_window_index_kernel = _m().get_window_index
@@ -405,13 +396,11 @@ def get_window_index_cuda(
     return window_indices, cu_window_seqlens
 
 
-
 ################################################################################################
 ##
 ## PermuteMoE topK
 ##
 ################################################################################################
-
 
 
 class PermuteMoE_topK(torch.autograd.Function):

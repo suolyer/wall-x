@@ -56,9 +56,7 @@ class ModelSection:
     checkpoint_path: str = ""
     train_config_path: Optional[str] = None
     norm_key: str = "libero_all"
-    cam_names: list = field(
-        default_factory=lambda: ["face_view", "right_wrist_view"]
-    )
+    cam_names: list = field(default_factory=lambda: ["face_view", "right_wrist_view"])
     action_horizon: Optional[int] = None
     # Adapter implementation key in harrix.adapters.registry.ADAPTER_REGISTRY.
     architecture: str = "qwen2_5"
@@ -132,9 +130,7 @@ def _build_dataclass(cls, raw):
     if raw is None:
         return cls()
     if not isinstance(raw, dict):
-        raise ValueError(
-            f"Expected dict for {cls.__name__}, got {type(raw).__name__}"
-        )
+        raise ValueError(f"Expected dict for {cls.__name__}, got {type(raw).__name__}")
     field_names = {f.name for f in dataclasses.fields(cls)}
     field_types = {f.name: f.type for f in dataclasses.fields(cls)}
     unknown = set(raw.keys()) - field_names

@@ -81,7 +81,9 @@ class WebsocketPolicyServer:
             self._scheduler = RequestScheduler(
                 policy=policy,
                 max_batch_size=max_batch_size,
-                max_wait_time_ms=max_wait_time_ms if max_wait_time_ms is not None else 0,
+                max_wait_time_ms=(
+                    max_wait_time_ms if max_wait_time_ms is not None else 0
+                ),
                 max_queue_size=max_queue_size,
                 timeout_ms=timeout_ms,
             )
@@ -112,7 +114,9 @@ class WebsocketPolicyServer:
                 process_request=_health_check,
             ) as server:
                 mode_str = "batched" if self.batching_enabled else "single"
-                logger.info(f"Server started on {self._host}:{self._port} (mode={mode_str})")
+                logger.info(
+                    f"Server started on {self._host}:{self._port} (mode={mode_str})"
+                )
                 await server.serve_forever()
         finally:
             if self._scheduler is not None:

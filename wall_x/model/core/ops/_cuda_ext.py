@@ -21,9 +21,7 @@ def load():
 
     _module = _load(
         name="wallx_ops",
-        sources=[
-        str(_dir / "binding.cu")
-        ],
+        sources=[str(_dir / "binding.cu")],
         extra_include_paths=[str(_dir / "common")],
         extra_cuda_cflags=["-O3", "--use_fast_math"],
         verbose=os.environ.get("WALLX_OPS_VERBOSE", "0") == "1",
@@ -35,6 +33,7 @@ def is_available() -> bool:
     """Check if CUDA kernels can be compiled."""
     try:
         import torch
+
         return torch.cuda.is_available()
     except Exception:
         return False

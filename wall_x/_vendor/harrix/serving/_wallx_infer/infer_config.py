@@ -194,9 +194,9 @@ class InferConfig:
             self._action_dim = sum(dof_config.values())
 
         if self._ar_action_dim is None:
-            ar_dof_config = self.train_config.get("ar_dof_config") or self.train_config.get(
-                "task", {}
-            ).get("ar_dof_config", {})
+            ar_dof_config = self.train_config.get(
+                "ar_dof_config"
+            ) or self.train_config.get("task", {}).get("ar_dof_config", {})
             self._ar_action_dim = sum(ar_dof_config.values())
 
     def _load_train_config(self, train_config_path):
