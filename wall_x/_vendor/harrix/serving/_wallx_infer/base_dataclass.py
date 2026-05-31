@@ -400,7 +400,7 @@ class RobotStateActionData:
             value = value.detach().cpu().numpy()
 
         if f"state_{key}" not in self.data:  # TODO： joint angle control
-self.logger.warning(f"{key} is not a valid state key; ignored")
+            self.logger.warning(f"{key} is not a valid state key; ignored")
             return
         gt_dim = dof_dims[key] if gt_dim is None else gt_dim
 
