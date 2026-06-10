@@ -96,9 +96,7 @@ def reverse_grounding_points(
                     orig_x = max(0, min(orig_width - 1, round(x / scale_w)))
                     orig_y = max(0, min(orig_height - 1, round(y / scale_h)))
                 elif model_type in ["qwen2", "qwen3", "qwen3_5"]:
-                    orig_x = max(
-                        0, min(orig_width - 1, round((x / 1000) * orig_width))
-                    )
+                    orig_x = max(0, min(orig_width - 1, round((x / 1000) * orig_width)))
                     orig_y = max(
                         0, min(orig_height - 1, round((y / 1000) * orig_height))
                     )

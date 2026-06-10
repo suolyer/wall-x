@@ -40,7 +40,9 @@ def _load_custom_action_stats(train_config: dict) -> dict | None:
         return json.load(f)
 
 
-def _normalizer_from_stats(action_stats: dict, train_config: dict, key: str) -> Normalizer:
+def _normalizer_from_stats(
+    action_stats: dict, train_config: dict, key: str
+) -> Normalizer:
     return Normalizer(
         action_stats,
         train_config[key],
@@ -49,7 +51,9 @@ def _normalizer_from_stats(action_stats: dict, train_config: dict, key: str) -> 
     )
 
 
-def _missing_normalizer_error(checkpoint_path: str, train_config: dict) -> FileNotFoundError:
+def _missing_normalizer_error(
+    checkpoint_path: str, train_config: dict
+) -> FileNotFoundError:
     custom = train_config.get("customized_action_statistic_dof", None)
     return FileNotFoundError(
         "Public inference requires normalization data. Expected one of: "
@@ -75,18 +79,24 @@ def build_normalizers(
         action_pth = os.path.join(checkpoint_path, "normalizer_action.pth")
         propri_pth = os.path.join(checkpoint_path, "normalizer_propri.pth")
         custom_stats = _load_custom_action_stats(train_config)
-        if custom_stats is None and (not os.path.exists(action_pth) or not os.path.exists(propri_pth)):
+        if custom_stats is None and (
+            not os.path.exists(action_pth) or not os.path.exists(propri_pth)
+        ):
             raise _missing_normalizer_error(checkpoint_path, train_config)
 
         if os.path.exists(action_pth):
             normalizer_action = Normalizer.from_ckpt(action_pth)
         else:
-            normalizer_action = _normalizer_from_stats(custom_stats, train_config, "dof_config")
+            normalizer_action = _normalizer_from_stats(
+                custom_stats, train_config, "dof_config"
+            )
 
         if os.path.exists(propri_pth):
             normalizer_propri = Normalizer.from_ckpt(propri_pth)
         else:
-            normalizer_propri = _normalizer_from_stats(custom_stats, train_config, "agent_pos_config")
+            normalizer_propri = _normalizer_from_stats(
+                custom_stats, train_config, "agent_pos_config"
+            )
 
     action_dim = sum(resolve_dof_config(train_config).values())
     propri_dim = sum(resolve_agent_pos_config(train_config).values())

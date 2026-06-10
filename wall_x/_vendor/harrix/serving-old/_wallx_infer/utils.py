@@ -41,7 +41,9 @@ class KeyboardThread(threading.Thread):
                     # Numeric input: switch instruction index
                     index = int(user_input)
                     self.new_instruction_index = index
-                    self.logger.info(f"[Keyboard] Switched to instruction index: {index}")
+                    self.logger.info(
+                        f"[Keyboard] Switched to instruction index: {index}"
+                    )
 
                 else:
                     self.logger.info(f"[Keyboard] Input {user_input}; no action taken.")

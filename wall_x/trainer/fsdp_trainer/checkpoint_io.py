@@ -437,7 +437,11 @@ def _maybe_resize_token_embeddings_for_load(
         if key not in state_dict:
             continue
         ckpt_vocab = state_dict[key].shape[0]
-        embed = model.get_input_embeddings() if hasattr(model, "get_input_embeddings") else None
+        embed = (
+            model.get_input_embeddings()
+            if hasattr(model, "get_input_embeddings")
+            else None
+        )
         if embed is None:
             return
         cur_vocab = embed.weight.shape[0]
@@ -449,7 +453,9 @@ def _maybe_resize_token_embeddings_for_load(
         )
         if hasattr(model, "resize_token_embeddings"):
             model.resize_token_embeddings(ckpt_vocab)
-        elif hasattr(model, "model") and hasattr(model.model, "resize_token_embeddings"):
+        elif hasattr(model, "model") and hasattr(
+            model.model, "resize_token_embeddings"
+        ):
             model.model.resize_token_embeddings(ckpt_vocab)
         return
 

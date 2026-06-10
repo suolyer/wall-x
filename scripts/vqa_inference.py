@@ -89,9 +89,7 @@ if __name__ == "__main__":
         test_question = "To move the red block in the plate with same color, what should you do next? Think step by step."
 
         # Local Image
-        img = Image.open(
-            "/path/to/cot_example_frame.png"
-        ).convert("RGB")
+        img = Image.open("/path/to/cot_example_frame.png").convert("RGB")
         # Internet Image
         # import requests
         # test_image_url = "https://www.ilankelman.org/stopsigns/australia.jpg"

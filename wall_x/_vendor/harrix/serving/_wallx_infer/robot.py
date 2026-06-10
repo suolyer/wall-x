@@ -3,7 +3,10 @@ from abc import ABC
 import re
 
 from wall_x._vendor.harrix.serving._wallx_infer.infer_config import InferConfig
-from wall_x._vendor.harrix.serving._wallx_infer.utils import VehiclePoseHandler, UnifiedTrajectoryProcessor
+from wall_x._vendor.harrix.serving._wallx_infer.utils import (
+    VehiclePoseHandler,
+    UnifiedTrajectoryProcessor,
+)
 from wall_x._vendor.harrix.serving._wallx_infer.base_dataclass import (
     RobotStateActionData,
     dof_dims,
@@ -93,9 +96,7 @@ def ingest_websocket_follow_pos(
                 robot_state_action_data.save_state_data_with_key(grip, key)
 
     for key, dim in agent_cfg.items():
-        if key == "action_padding" or key.startswith(
-            ("follow_left_", "follow_right_")
-        ):
+        if key == "action_padding" or key.startswith(("follow_left_", "follow_right_")):
             continue
         norm_key = key.replace("follow_", "").replace("master_", "")
         if robot_state_action_data.data.get(f"state_{norm_key}") is None:
@@ -109,9 +110,7 @@ def export_websocket_follow_pos(
 ) -> dict[str, list]:
     """Convert model ``robot_state_action_data`` back to ``follow1_pos``/``follow2_pos``."""
     left_arm_action = _stack_state_action_series(robot_state_action_data, side="left")
-    right_arm_action = _stack_state_action_series(
-        robot_state_action_data, side="right"
-    )
+    right_arm_action = _stack_state_action_series(robot_state_action_data, side="right")
     return {
         "follow1_pos": left_arm_action.tolist(),
         "follow2_pos": right_arm_action.tolist(),
@@ -245,7 +244,9 @@ def _stack_state_action_series(
     return np.concatenate([pos, rot, grip], axis=1)
 
 
-def _views_to_camera_observation(config: InferConfig, views: dict) -> dict[str, np.ndarray]:
+def _views_to_camera_observation(
+    config: InferConfig, views: dict
+) -> dict[str, np.ndarray]:
     """Map websocket camera keys to model observation keys.
 
     Only cameras listed in ``config.cam_names`` are required (e.g. LIBERO uses
@@ -280,9 +281,7 @@ def _views_to_camera_observation(config: InferConfig, views: dict) -> dict[str, 
                     observation[obs_key] = view_data
                 break
         else:
-            raise KeyError(
-                f"Missing view for {obs_key!r}, tried keys: {possible_keys}"
-            )
+            raise KeyError(f"Missing view for {obs_key!r}, tried keys: {possible_keys}")
     return observation
 
 

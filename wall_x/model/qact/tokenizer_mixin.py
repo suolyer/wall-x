@@ -15,7 +15,6 @@ except ImportError:
     SpatialActionTokenizer = None
 
 
-
 class ActionTokenizerMixin(ABC):
     """Base class for action tokenizers"""
 
@@ -929,7 +928,6 @@ class SpatialVLATokenizerMixin(ActionTokenizerMixin):
             ar_action_mask[b, end_idx:prefix_length] = -1  # eos
 
         return {"ar_action_mask": ar_action_mask}
-
 
 
 # ============================================================

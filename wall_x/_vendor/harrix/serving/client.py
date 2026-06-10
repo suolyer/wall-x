@@ -215,9 +215,7 @@ def main_sync(args):
         print(response["action"])
         end_time = time.perf_counter()
         print(f"Time taken: {(end_time - start_time) * 1000} ms")
-    action_label = torch.load(
-        "./example_data"
-    ).numpy()
+    action_label = torch.load("./example_data").numpy()
     np.testing.assert_array_equal(response["action"], action_label)
     print("compare success")
     client.close_sync()

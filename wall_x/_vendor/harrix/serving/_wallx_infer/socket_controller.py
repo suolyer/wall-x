@@ -25,7 +25,9 @@ class RobotRegistry:
     def __init__(self):
         self.registry = _DEFAULT_ROBOT_CONFIG
         self.logger = InferLogger.get_controller_logger("RobotRegistry")
-        self.logger.debug(f"Initialized robot registry with {len(self.registry)} robots")
+        self.logger.debug(
+            f"Initialized robot registry with {len(self.registry)} robots"
+        )
 
     def register_robot(self, robot_id, host, action_port, keyboard_port):
         if robot_id in self.registry:
@@ -90,7 +92,9 @@ class RobotCommunication:
         port = self.robot_info["action_port"]
         self.action_sock.bind((host, port))
         self.action_sock.listen(1)
-        self.logger.info(f"Listening on action port: {host}:{self.action_sock.getsockname()[1]}")
+        self.logger.info(
+            f"Listening on action port: {host}:{self.action_sock.getsockname()[1]}"
+        )
 
         action_thread = threading.Thread(target=self.handle_action_client)
 

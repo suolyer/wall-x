@@ -15,7 +15,6 @@ import logging
 import os
 import socket
 import sys
-import yaml
 import traceback
 import tyro
 
@@ -38,9 +37,11 @@ def get_wallx_policy(model_config, image_passing_mode, serialize_actions=True):
     from wall_x._vendor.harrix.serving._wallx_infer.infer_config import InferConfig
 
     config = InferConfig(**_server_model_config_to_infer_kwargs(model_config))
-    return WallXPolicy(config=config, image_passing_mode=image_passing_mode, serialize_actions=serialize_actions)
-
-
+    return WallXPolicy(
+        config=config,
+        image_passing_mode=image_passing_mode,
+        serialize_actions=serialize_actions,
+    )
 
 
 logger = logging.getLogger(__name__)
@@ -96,6 +97,7 @@ class ServerModelConfig:
     prompt_template: str | None = None
     qwen25_prompt_template: str | None = None
     prompt_priority_order: str | None = None
+
 
 @dataclasses.dataclass
 class Args:

@@ -87,11 +87,10 @@ def _normalize_real_prefix(normalizer, tensor, dataset_names):
             f"normalizer width {width} exceeds tensor dim {tensor.shape[-1]}"
         )
     out = tensor.clone()
-    out[..., :width] = normalizer.normalize_data(
-        tensor[..., :width], dataset_names
-    )
+    out[..., :width] = normalizer.normalize_data(tensor[..., :width], dataset_names)
     out[..., width:] = 0
     return out
+
 
 class QwenVLActInferAdapter(BaseInferAdapter):
     """Shared constructor and batched flow inference implementation."""
@@ -142,7 +141,10 @@ class QwenVLActInferAdapter(BaseInferAdapter):
         self._normalizer_action = normalizer_action
         self._normalizer_propri = normalizer_propri
         self._norm_key = resolved_norm_key
-        if normalizer_propri is not None and resolved_norm_key in normalizer_propri.delta:
+        if (
+            normalizer_propri is not None
+            and resolved_norm_key in normalizer_propri.delta
+        ):
             train_config["_libero_proprio_norm_dim"] = int(
                 normalizer_propri.delta[resolved_norm_key].shape[0]
             )

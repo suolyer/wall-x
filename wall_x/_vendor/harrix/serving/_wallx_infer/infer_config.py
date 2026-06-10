@@ -141,9 +141,7 @@ class InferConfig:
         self._load_all_configs(train_config_path)
         self._apply_cam_names_from_train_config(cam_names)
 
-    def _apply_cam_names_from_train_config(
-        self, cam_names: list[str] | None
-    ) -> None:
+    def _apply_cam_names_from_train_config(self, cam_names: list[str] | None) -> None:
         """Use train YAML camera mapping when CLI did not override cam_names."""
         if cam_names is not None:
             return
@@ -217,9 +215,9 @@ class InferConfig:
             self._action_dim = sum(dof_config.values())
 
         if self._ar_action_dim is None:
-            ar_dof_config = self.train_config.get("ar_dof_config") or self.train_config.get(
-                "task", {}
-            ).get("ar_dof_config", {})
+            ar_dof_config = self.train_config.get(
+                "ar_dof_config"
+            ) or self.train_config.get("task", {}).get("ar_dof_config", {})
             self._ar_action_dim = sum(ar_dof_config.values())
 
     def _load_train_config(self, train_config_path):
@@ -325,7 +323,9 @@ class InferConfig:
         self.model_config.update_model_config(self.train_config)
 
         self.model_config._attn_implementation = "sdpa"
-        vision_attn = os.environ.get("WALLX_VISION_ATTN_IMPLEMENTATION", "flash_attention_2")
+        vision_attn = os.environ.get(
+            "WALLX_VISION_ATTN_IMPLEMENTATION", "flash_attention_2"
+        )
         self.model_config.vision_config._attn_implementation = vision_attn
         logger.info(
             "[LoadModelConfig] vision _attn_implementation=%s (override via WALLX_VISION_ATTN_IMPLEMENTATION)",

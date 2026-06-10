@@ -26,7 +26,6 @@ import asyncio
 import base64
 import json
 import logging
-import os
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -74,7 +73,9 @@ class EpisodeArrays:
         if self._dataset is None:
             raise RuntimeError("Episode image loader is not initialized.")
         if not self._image_cache:
-            logger.info("Decoding camera frames on demand (first obs_idx=%d)", frame_idx)
+            logger.info(
+                "Decoding camera frames on demand (first obs_idx=%d)", frame_idx
+            )
         item = self._dataset[frame_idx]
         images = {
             cam_key: tensor_to_rgb_uint8(item[cam_key])
@@ -109,7 +110,11 @@ def _task_block(train_config: dict[str, Any]) -> dict[str, Any]:
 
 
 def _dof_config(train_config: dict[str, Any]) -> dict[str, int]:
-    return train_config.get("dof_config") or _task_block(train_config).get("dof_config") or {}
+    return (
+        train_config.get("dof_config")
+        or _task_block(train_config).get("dof_config")
+        or {}
+    )
 
 
 def _agent_pos_config(train_config: dict[str, Any]) -> dict[str, int]:
@@ -268,9 +273,7 @@ def build_state_payload(
         has_right = any(k.startswith("follow_right_") for k in agent_cfg)
         payload: dict[str, list[float]] = {}
         if has_left:
-            left = _arm_follow_pos_from_agent_cfg(
-                state_vec, agent_cfg, "follow_left_"
-            )
+            left = _arm_follow_pos_from_agent_cfg(state_vec, agent_cfg, "follow_left_")
             if left is not None:
                 payload["follow1_pos"] = left
         if has_right:
@@ -549,9 +552,7 @@ def load_episode_arrays(
 
     start = max(0, int(frame_start))
     end = num_steps if frame_end is None else min(num_steps, int(frame_end))
-    states = [
-        _hf_row_to_numpy(ds.hf_dataset[i], state_key) for i in range(start, end)
-    ]
+    states = [_hf_row_to_numpy(ds.hf_dataset[i], state_key) for i in range(start, end)]
     actions = [
         _hf_row_to_numpy(ds.hf_dataset[i], action_key) for i in range(start, end)
     ]
@@ -678,9 +679,9 @@ def plot_openloop(
 
     gt_rows = np.asarray(action_gt_list, dtype=np.float32)
     pred_rows = np.asarray(action_pred_list, dtype=np.float32)
-    assert gt_rows.shape == pred_rows.shape, (
-        f"shape mismatch: pred={pred_rows.shape} gt={gt_rows.shape}"
-    )
+    assert (
+        gt_rows.shape == pred_rows.shape
+    ), f"shape mismatch: pred={pred_rows.shape} gt={gt_rows.shape}"
     n, dim = gt_rows.shape
 
     fig, axes = plt.subplots(dim, 1, figsize=(12, 3.5 * dim), sharex=True)
@@ -887,7 +888,9 @@ async def run_openloop_eval(
 
             ep_tag = f"ep{ep_idx}"
             valid_mask = ~np.isnan(pred_full).any(axis=1)
-            action_l1 = float(np.mean(np.abs(pred_full[valid_mask] - gt_full[valid_mask])))
+            action_l1 = float(
+                np.mean(np.abs(pred_full[valid_mask] - gt_full[valid_mask]))
+            )
             summary = {
                 "episode_index": ep_idx,
                 "instruction": episode.instruction,
@@ -908,7 +911,9 @@ async def run_openloop_eval(
 
             ml = min(len(aligned_gt), len(aligned_pred))
             if ml < 3:
-                logger.warning("Episode %d: too few aligned rows (%d) to plot.", ep_idx, ml)
+                logger.warning(
+                    "Episode %d: too few aligned rows (%d) to plot.", ep_idx, ml
+                )
                 continue
 
             gt_ml = np.asarray(aligned_gt[:ml], dtype=np.float32)
