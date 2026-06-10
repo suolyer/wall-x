@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
         # Local Image
         img = Image.open(
-            "/x2robot_v2/yangping/github/wall-x/assets/cot_example_frame.png"
+            "/path/to/cot_example_frame.png"
         ).convert("RGB")
         # Internet Image
         # import requests
